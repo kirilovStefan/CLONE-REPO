@@ -1,0 +1,287 @@
+/* This CSS code is applied for browser-only rendering in HTML format */
+
+.readme-book-cover-image {
+    float: right;
+    margin-left: 10px;
+    width: 50%;
+}
+
+@media screen and (min-width 480px) {
+    .readme-book-cover-image {
+        float: none;
+    }
+}
+
+.markdown-section code {
+    padding: 0.2em 0em;
+    border-radius: 0.25em;
+    font-size: 1em;
+}
+
+.markdown-section pre {
+    padding: 0.4em 0.6em;
+    border-radius: 0.25em;
+    line-height: 1.5em;
+    margin-bottom: 1em;
+}
+
+.markdown-section pre>code {
+    font-size: 1em;
+}
+
+.markdown-section h1,
+.markdown-section h2,
+.markdown-section h3,
+.markdown-section h4,
+.markdown-section h5,
+.markdown-section h6 {
+    margin-top: 0.7em;
+    margin-bottom: .3em;
+}
+
+.markdown-section table th {
+    background: #eee;
+}
+
+.page-wrapper .page-inner {
+    max-width: 960px;
+    padding-left: 20px;
+}
+
+a.run-code-button:hover,
+a.run-code-button:focus {
+    background: #98d598;
+    text-decoration: none;
+}
+
+a.run-code-button {
+    float: right;
+    background: #cae7ca;
+    border-radius: 4px;
+    padding: 3px 10px;
+    text-shadow: 0px 0px 2px white;
+    border: 1px solid #add2ad;
+    margin-top: 3px;
+}
+
+span.run-code-loading {
+    float: right;
+    background: #ffd02b;
+    border-radius: 4px;
+    padding: 3px 10px;
+    text-shadow: 0px 0px 2px white;
+    border: 1px solid #eec036;
+    margin-top: 3px;
+    margin-left: 10px;
+    cursor: wait;
+}
+
+.video-player {
+    width: 100%;
+    position: relative;
+    padding: 2px 0 56.25% 0;
+    height: 0;
+}
+
+.video-player iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
+
+/* Top navigation menu */
+
+.topnav {
+    padding: 10px 5px 5px 15px;
+    border-radius: 3px;
+    background-color: #f1f1f1;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+}
+
+.topnav a {
+    text-align: center;
+    display: inline-block;
+    color: #333333;
+    padding-right: 2.5em;
+}
+
+.topnav .logo {
+    padding-top: 0.4em;
+    width: 120px;
+    min-width: 90px;
+}
+
+@media screen and (max-width: 800px) {
+    .topnav .logo {
+        content: url("/assets/softuni-global-vertical-logo.svg");
+        padding: 5px 0;
+        width: 50px;
+        min-width: 40px;
+    }
+    .topnav {
+        white-space: normal;
+        flex-direction: row;
+    }
+    .topnav a {
+        font-size: 90%;
+        padding-right: 7%;
+    }
+}
+
+@media screen and (max-width: 400px) {
+    .topnav a {
+        padding-right: 1.2em;
+        font-size: 80%;
+    }
+}
+
+
+/* Modal popup */
+
+.modal-background {
+    display: none;
+    position: fixed;
+    z-index: 999;
+    padding-top: 6em;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgb(0, 0, 0);
+    background-color: rgba(0, 0, 0, 0.4);
+}
+
+.modal-content {
+    border-radius: 2em;
+    display: block;
+    background-color: #fefefe;
+    margin: auto;
+    position: relative;
+    padding: 1.5em;
+    width: 39em;
+    color: #333333;
+    font-family: "trebuchet ms", helvetica, sans-serif;
+}
+
+.modal-title {
+    font-size: 2.1em;
+    font-weight: bold;
+    line-height: 1.3em;
+    text-align: center;
+    padding-bottom: 10px;
+    display: block;
+}
+
+.button-wrapper {
+    display: flex;
+    justify-content: center;
+    padding-bottom: 0.7em;
+}
+
+.button-wrapper a {
+    border-radius: 2em;
+    text-align: center;
+    display: inline-block;
+    padding: 0.7em 1.4em 0.7em 1.4em;
+    margin: 0.3em;
+    font-size: 1.5em;
+    font-weight: bold;
+    color: #333333 !important;
+    text-decoration: none !important;
+    background-color: #44a9f8;
+}
+
+.upper-text {
+    display: block;
+}
+
+.upper-text-link {
+    color: #333333 !important;
+    text-decoration: none !important;
+}
+
+.middle-text {
+    padding-top: 0.5em;
+    padding-bottom: 0.5em;
+    display: block;
+}
+
+.middle-text span {
+    display: block;
+    padding-left: 1.7em;
+}
+
+.middle-text-title {
+    padding-left: 0em !important;
+}
+
+.lower-text {
+    margin-bottom: 2em;
+    padding-bottom: 1em;
+}
+
+.close-wrapper {
+    display: flex;
+    justify-content: right;
+}
+
+.close {
+    position: absolute;
+    top: 0;
+    right: 0.5em;
+    color: #aaaaaa;
+    font-size: 3em;
+    font-weight: bold;
+}
+
+.close:hover,
+.close:focus {
+    color: #000;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+@media screen and (max-width: 700px) {
+    .modal-content {
+        width: 18em;
+        padding-left: 1em;
+        padding-right: 1em;
+        padding-bottom: 0em;
+    }
+    .button-wrapper a {
+        padding: 0.3em 1.0em 0.3em 1.0em;
+        border-radius: 1em;
+    }
+    .upper-text {
+        display: none;
+    }
+    .middle-text {
+        display: none;
+    }
+    .lower-text {
+        display: none;
+    }
+    .close {
+        position: absolute;
+        top: 0;
+        right: 0.3em;
+        color: #aaaaaa;
+        font-size: 3em;
+        font-weight: bold;
+    }
+}
+
+@media screen and (max-width: 300px) {
+    .modal-content {
+        display: none;
+    }
+    .modal-background {
+        padding-top: 4em;
+    }
+}
