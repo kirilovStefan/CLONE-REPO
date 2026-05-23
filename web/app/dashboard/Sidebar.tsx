@@ -50,16 +50,16 @@ function BusinessHeader() {
         type="button"
         onClick={() => setOpen((v) => !v)}
         onBlur={() => setTimeout(() => setOpen(false), 200)}
-        className="flex w-full items-center gap-3 px-4 py-4 text-left transition hover:bg-ink-muted/20"
+        className="flex w-full items-center gap-3 px-4 py-3 text-left transition hover:bg-ink-muted/20"
       >
         <span
-          className="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-accent font-display text-xl font-bold text-ink"
+          className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-accent font-display text-lg font-bold text-ink"
           title={t("sidebar.uploadLogo")}
         >
           B
         </span>
         <div className="min-w-0 flex-1">
-          <p className="truncate font-display text-base leading-tight">
+          <p className="truncate font-display text-sm leading-tight">
             {t("sidebar.businessName")}
           </p>
           <p className="truncate text-[10px] uppercase tracking-widest text-bone-dim">
@@ -187,12 +187,12 @@ function MiniCalendar() {
   }
 
   return (
-    <div className="border-b border-ink-muted/30 px-3 py-3">
-      <div className="mb-2 flex items-center justify-between px-1">
+    <div className="border-b border-ink-muted/30 px-3 py-2">
+      <div className="mb-1.5 flex items-center justify-between px-0.5">
         <button
           type="button"
           onClick={goToPrevMonth}
-          className="grid h-6 w-6 place-items-center rounded text-bone-dim transition hover:bg-ink-muted/40 hover:text-bone"
+          className="grid h-5 w-5 place-items-center rounded text-bone-dim transition hover:bg-ink-muted/40 hover:text-bone"
           aria-label={t("sidebar.prevMonth")}
         >
           ‹
@@ -200,7 +200,7 @@ function MiniCalendar() {
         <button
           type="button"
           onClick={goToToday}
-          className="text-xs font-medium capitalize text-bone transition hover:text-accent"
+          className="text-[11px] font-medium capitalize text-bone transition hover:text-accent"
           title={t("sidebar.gotoToday")}
         >
           {monthLabel}
@@ -208,18 +208,18 @@ function MiniCalendar() {
         <button
           type="button"
           onClick={goToNextMonth}
-          className="grid h-6 w-6 place-items-center rounded text-bone-dim transition hover:bg-ink-muted/40 hover:text-bone"
+          className="grid h-5 w-5 place-items-center rounded text-bone-dim transition hover:bg-ink-muted/40 hover:text-bone"
           aria-label={t("sidebar.nextMonth")}
         >
           ›
         </button>
       </div>
 
-      <div className="grid grid-cols-7 gap-0.5">
+      <div className="grid grid-cols-7 gap-px">
         {weekdayLabels.map((d) => (
           <span
             key={d}
-            className="py-1 text-center text-[9px] uppercase tracking-wider text-bone-dim/70"
+            className="text-center text-[8px] uppercase tracking-wider text-bone-dim/70"
           >
             {d}
           </span>
@@ -230,14 +230,14 @@ function MiniCalendar() {
           const isSelected = isSameDay(d, selectedDate);
 
           const baseClasses =
-            "relative grid aspect-square place-items-center rounded text-xs transition";
+            "relative grid h-6 w-full place-items-center rounded text-[11px] transition";
           const textColor = !isCurrentMonth
             ? "text-bone-dim/30"
             : isTodayDay
               ? "text-red-400 font-bold"
               : "text-bone";
           const selection = isSelected
-            ? "ring-2 ring-accent"
+            ? "ring-1 ring-accent"
             : "hover:bg-ink-muted/40";
 
           return (
@@ -249,7 +249,7 @@ function MiniCalendar() {
             >
               <span>{d.getDate()}</span>
               {isTodayDay && (
-                <span className="absolute bottom-0.5 h-0.5 w-0.5 rounded-full bg-red-500" />
+                <span className="absolute bottom-0 h-0.5 w-0.5 rounded-full bg-red-500" />
               )}
             </button>
           );
@@ -267,7 +267,7 @@ function Nav() {
     (p) => p.stockQty <= p.lowStockThreshold
   ).length;
   return (
-    <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-2">
+    <nav className="flex-1 space-y-0.5 overflow-y-auto px-2 py-1.5">
       {items.map((item) => {
         const isActive =
           pathname === item.href ||
@@ -279,14 +279,14 @@ function Nav() {
             key={item.href}
             href={item.soon ? "#" : item.href}
             onClick={(e) => item.soon && e.preventDefault()}
-            className={`group flex items-center justify-between rounded-xl px-3 py-2 text-sm transition ${
+            className={`group flex items-center justify-between rounded-lg px-3 py-1.5 text-sm transition ${
               isActive
                 ? "bg-accent/15 text-bone"
                 : "text-bone-dim hover:bg-ink-muted/40 hover:text-bone"
             } ${item.soon ? "cursor-not-allowed opacity-60" : ""}`}
           >
-            <span className="flex items-center gap-3">
-              <span className="text-base">{item.icon}</span>
+            <span className="flex items-center gap-2.5">
+              <span className="text-sm">{item.icon}</span>
               <span>{t(item.labelKey)}</span>
             </span>
             {showLowStockBadge && (
@@ -317,7 +317,7 @@ function Nav() {
 function Footer() {
   const { t } = useT();
   return (
-    <div className="border-t border-ink-muted/40 px-4 py-3 text-[11px] text-bone-dim">
+    <div className="border-t border-ink-muted/40 px-3 py-2 text-[10px] text-bone-dim">
       {t("sidebar.demoFooter")}
     </div>
   );
