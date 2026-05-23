@@ -46,6 +46,7 @@ function TopBar() {
 function ViewAsSelector() {
   const { viewAs, setViewAs, currentLocationId } = useCalendar();
   const [open, setOpen] = useState(false);
+  const [passwordPrompt, setPasswordPrompt] = useState(false);
 
   const locationBarbers = barbers.filter(
     (b) => b.locationId === currentLocationId
@@ -53,6 +54,21 @@ function ViewAsSelector() {
   const isOwner = viewAs === "owner";
   const currentBarber = barbers.find((b) => b.id === viewAs);
   const currentLabel = isOwner ? "Собственик" : currentBarber?.name ?? "?";
+
+  function requestOwnerSwitch() {
+    setOpen(false);
+    if (isOwner) return;
+    setPasswordPrompt(true);
+  }
+
+  function handlePasswordConfirm(password: string): boolean {
+    if (password === "1234") {
+      setViewAs("owner");
+      setPasswordPrompt(false);
+      return true;
+    }
+    return false;
+  }
 
   return (
     <div className="relative">
@@ -79,8 +95,7 @@ function ViewAsSelector() {
             type="button"
             onMouseDown={(e) => {
               e.preventDefault();
-              setViewAs("owner");
-              setOpen(false);
+              requestOwnerSwitch();
             }}
             className={`flex w-full items-center gap-3 rounded-t-xl px-3 py-2.5 text-left transition hover:bg-ink-muted/40 ${
               isOwner ? "bg-accent/10" : ""
@@ -90,9 +105,13 @@ function ViewAsSelector() {
               👑
             </span>
             <div className="flex-1">
-              <p className="text-sm font-medium">Собственик</p>
+              <p className="text-sm font-medium">
+                Собственик {!isOwner && "🔒"}
+              </p>
               <p className="text-[11px] text-bone-dim">
-                Пълен достъп до всички локации и данни
+                {isOwner
+                  ? "Пълен достъп до всички локации и данни"
+                  : "Изисква се парола"}
               </p>
             </div>
             {isOwner && <span className="text-accent">✓</span>}
@@ -133,6 +152,104 @@ function ViewAsSelector() {
           })}
         </div>
       )}
+
+      {passwordPrompt && (
+        <OwnerPasswordModal
+          onClose={() => setPasswordPrompt(false)}
+          onConfirm={handlePasswordConfirm}
+        />
+      )}
+    </div>
+  );
+}
+
+function OwnerPasswordModal({
+  onClose,
+  onConfirm,
+}: {
+  onClose: () => void;
+  onConfirm: (password: string) => boolean;
+}) {
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!password.trim()) return;
+    if (!onConfirm(password)) {
+      setError("Грешна парола. Опитай отново.");
+      setPassword("");
+    }
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-sm rounded-2xl border border-ink-muted bg-ink-soft p-6 shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-start gap-3">
+          <span className="grid h-11 w-11 place-items-center rounded-xl bg-accent/20 text-2xl">
+            🔒
+          </span>
+          <div>
+            <h2 className="font-display text-xl">Достъп до собственик</h2>
+            <p className="mt-1 text-sm text-bone-dim">
+              Въведи парола, за да преминеш в изглед на собственика.
+            </p>
+          </div>
+        </div>
+
+        <form onSubmit={handleSubmit} className="mt-5 space-y-3">
+          <div>
+            <label className="text-xs uppercase tracking-widest text-bone-dim">
+              Парола
+            </label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                setError("");
+              }}
+              autoFocus
+              placeholder="••••"
+              className={`mt-1.5 w-full rounded-xl border bg-ink px-4 py-2.5 text-sm text-bone placeholder:text-bone-dim/50 focus:outline-none ${
+                error
+                  ? "border-rose-500 focus:border-rose-400"
+                  : "border-ink-muted focus:border-accent"
+              }`}
+            />
+            {error ? (
+              <p className="mt-1.5 text-xs text-rose-400">{error}</p>
+            ) : (
+              <p className="mt-1.5 text-[10px] italic text-bone-dim/70">
+                Демо парола: <span className="font-mono">1234</span>
+              </p>
+            )}
+          </div>
+
+          <div className="flex justify-end gap-2 pt-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-full border border-bone-dim/30 px-5 py-2 text-sm text-bone-dim transition hover:border-bone hover:text-bone"
+            >
+              Отказ
+            </button>
+            <button
+              type="submit"
+              disabled={!password.trim()}
+              className="rounded-full bg-accent px-5 py-2 text-sm font-medium text-ink transition hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Влез
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }
