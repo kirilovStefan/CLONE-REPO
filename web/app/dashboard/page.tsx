@@ -24,6 +24,8 @@ import {
   getApprovedTimeOff,
   dateToIsoDay,
 } from "@/lib/calendar-context";
+import { useT } from "@/lib/i18n";
+import type { TranslationKey } from "@/lib/translations";
 
 const START_HOUR = 0;
 const END_HOUR = 24;
@@ -85,6 +87,7 @@ export default function DashboardCalendarPage() {
   const today = useMemo(() => startOfDay(new Date()), []);
   const isToday = isSameDay(selectedDate, today);
   const isBarberView = viewAs !== "owner";
+  const { localeTag } = useT();
   const [selectedBarberId, setSelectedBarberId] = useState<string | "all">(
     "all"
   );
@@ -373,7 +376,7 @@ export default function DashboardCalendarPage() {
     return locationBarbers;
   }, [currentLocationId, isBarberView, viewAs, selectedBarberId]);
 
-  const dateLabel = selectedDate.toLocaleDateString("bg-BG", {
+  const dateLabel = selectedDate.toLocaleDateString(localeTag, {
     weekday: "long",
     day: "numeric",
     month: "long",
@@ -392,7 +395,7 @@ export default function DashboardCalendarPage() {
       ? (nowMinutesFromStart / 30) * ROW_HEIGHT
       : null;
   const nowLabel = now
-    ? now.toLocaleTimeString("bg-BG", { hour: "2-digit", minute: "2-digit" })
+    ? now.toLocaleTimeString(localeTag, { hour: "2-digit", minute: "2-digit" })
     : "";
 
   const detailsBaseAppt = detailsModal
@@ -593,6 +596,7 @@ function Toolbar({
   isBarberView: boolean;
   onRequestTimeOff: () => void;
 }) {
+  const { t } = useT();
   const locationBarbers = barbers.filter(
     (b) => b.locationId === currentLocationId
   );
@@ -602,7 +606,7 @@ function Toolbar({
         <button
           onClick={onPrevDay}
           className="grid h-9 w-9 place-items-center rounded-lg border border-ink-muted text-bone-dim transition hover:border-accent hover:text-bone"
-          aria-label="Предишен ден"
+          aria-label={t("toolbar.prevDay")}
         >
           ←
         </button>
@@ -612,7 +616,7 @@ function Toolbar({
         <button
           onClick={onNextDay}
           className="grid h-9 w-9 place-items-center rounded-lg border border-ink-muted text-bone-dim transition hover:border-accent hover:text-bone"
-          aria-label="Следващ ден"
+          aria-label={t("toolbar.nextDay")}
         >
           →
         </button>
@@ -621,7 +625,7 @@ function Toolbar({
           disabled={isToday}
           className="ml-2 rounded-lg border border-ink-muted px-3 py-1.5 text-xs uppercase tracking-wider text-bone-dim transition hover:border-accent hover:text-bone disabled:cursor-not-allowed disabled:opacity-40"
         >
-          Днес
+          {t("toolbar.today")}
         </button>
       </div>
 
@@ -632,7 +636,7 @@ function Toolbar({
             onClick={onRequestTimeOff}
             className="rounded-lg border border-ink-muted bg-ink px-3 py-2 text-sm text-bone-dim transition hover:border-accent hover:text-bone"
           >
-            🏖️ Заявка за отсъствие
+            {t("timeOff.requestButton")}
           </button>
         ) : (
           <select
@@ -641,7 +645,7 @@ function Toolbar({
             className="rounded-lg border border-ink-muted bg-ink px-3 py-2 text-sm text-bone focus:border-accent focus:outline-none"
           >
             <option value="all">
-              Всички бръснари ({locationBarbers.length})
+              {t("toolbar.allBarbers", { count: locationBarbers.length })}
             </option>
             {locationBarbers.map((b) => (
               <option key={b.id} value={b.id}>
@@ -656,29 +660,30 @@ function Toolbar({
 }
 
 function StatusLegend() {
-  const statuses: AppointmentStatus[] = [
-    "confirmed",
-    "in-progress",
-    "completed",
-    "no-show",
+  const { t } = useT();
+  const statuses: { status: AppointmentStatus; key: TranslationKey }[] = [
+    { status: "confirmed", key: "status.confirmed" },
+    { status: "in-progress", key: "status.inProgress" },
+    { status: "completed", key: "status.completed" },
+    { status: "no-show", key: "status.noShow" },
   ];
   return (
     <div className="mt-3 flex shrink-0 flex-wrap gap-x-5 gap-y-2 text-xs text-bone-dim">
-      {statuses.map((s) => {
-        const c = STATUS_COLOR_CLASSES[s];
+      {statuses.map(({ status, key }) => {
+        const c = STATUS_COLOR_CLASSES[status];
         return (
-          <span key={s} className="flex items-center gap-2">
+          <span key={status} className="flex items-center gap-2">
             <span className={`h-2.5 w-2.5 rounded-full ${c.dot}`} />
-            {c.label}
+            {t(key)}
           </span>
         );
       })}
       <span className="flex items-center gap-2">
         <span className="h-px w-5 bg-red-500" />
-        Текущ час
+        {t("status.currentTime")}
       </span>
       <span className="ml-auto hidden text-bone-dim/70 md:inline">
-        💡 Влачи за преместване · долен край за смяна на времетраене
+        {t("status.hint")}
       </span>
     </div>
   );
@@ -760,6 +765,7 @@ function BarberColumn({
     e: React.MouseEvent
   ) => void;
 }) {
+  const { t, localeTag } = useT();
   const initials = barber.name
     .split(" ")
     .map((n) => n[0])
@@ -845,14 +851,14 @@ function BarberColumn({
           <div
             className="pointer-events-none absolute inset-x-0 top-0 bg-ink/55"
             style={{ height: workStartPx }}
-            title="Извън работно време"
+            title={t("calendar.offHours")}
           />
         )}
         {workEndPx < TOTAL_HEIGHT && (
           <div
             className="pointer-events-none absolute inset-x-0 bg-ink/55"
             style={{ top: workEndPx, height: TOTAL_HEIGHT - workEndPx }}
-            title="Извън работно време"
+            title={t("calendar.offHours")}
           />
         )}
 
@@ -884,18 +890,18 @@ function BarberColumn({
           >
             <div className="rounded-2xl border border-rose-400/50 bg-ink/85 px-4 py-3 text-center shadow-xl">
               <p className="font-display text-xl tracking-widest text-rose-300">
-                ОТСЪСТВА
+                {t("timeOff.outOfOffice")}
               </p>
               <p className="mt-1 text-xs text-rose-200/80">
-                {TIME_OFF_REASON_LABEL[timeOff.reason]}
+                {t(`timeOff.reason.${timeOff.reason}` as TranslationKey)}
               </p>
               <p className="mt-1 text-[10px] text-rose-200/60">
-                {new Date(timeOff.startDate).toLocaleDateString("bg-BG", {
+                {new Date(timeOff.startDate).toLocaleDateString(localeTag, {
                   day: "numeric",
                   month: "short",
                 })}
                 {" – "}
-                {new Date(timeOff.endDate).toLocaleDateString("bg-BG", {
+                {new Date(timeOff.endDate).toLocaleDateString(localeTag, {
                   day: "numeric",
                   month: "short",
                 })}
@@ -925,13 +931,14 @@ function formatMinutesToTime(totalMin: number) {
 }
 
 function HoverMarker({ startMinutes }: { startMinutes: number }) {
+  const { t } = useT();
   const top = (startMinutes / 30) * ROW_HEIGHT;
   return (
     <div
       className="pointer-events-none absolute inset-x-1 z-[3] flex flex-col justify-center rounded-md border-2 border-dashed border-accent bg-accent/20 px-2 py-1 text-center text-[11px] font-medium text-accent"
       style={{ top, height: HOUR_HEIGHT - 2 }}
     >
-      <p>+ Нов час</p>
+      <p>{t("calendar.newSlot")}</p>
       <p className="opacity-80">
         {formatMinutesToTime(startMinutes)}–
         {formatMinutesToTime(startMinutes + 60)}
@@ -974,6 +981,7 @@ function AppointmentBlock({
   onClick: () => void;
   onMouseDown: (mode: "move" | "resize", e: React.MouseEvent) => void;
 }) {
+  const { t, localeTag } = useT();
   const service = services.find((s) => s.id === appointment.serviceId);
   if (!service) return null;
 
@@ -985,13 +993,24 @@ function AppointmentBlock({
   const height = (durationMin / 30) * ROW_HEIGHT;
 
   const status = effectiveStatus(appointment, durationMin, now);
+  const statusLabelKey: TranslationKey =
+    status === "confirmed"
+      ? "status.confirmed"
+      : status === "in-progress"
+        ? "status.inProgress"
+        : status === "completed"
+          ? "status.completed"
+          : status === "no-show"
+            ? "status.noShow"
+            : "status.cancelled";
+  const statusLabel = t(statusLabelKey);
   const colors = STATUS_COLOR_CLASSES[status];
-  const startLabel = date.toLocaleTimeString("bg-BG", {
+  const startLabel = date.toLocaleTimeString(localeTag, {
     hour: "2-digit",
     minute: "2-digit",
   });
   const endDate = new Date(date.getTime() + durationMin * 60_000);
-  const endLabel = endDate.toLocaleTimeString("bg-BG", {
+  const endLabel = endDate.toLocaleTimeString(localeTag, {
     hour: "2-digit",
     minute: "2-digit",
   });
@@ -1012,8 +1031,8 @@ function AppointmentBlock({
           ? "scale-[1.03] cursor-grabbing opacity-90 shadow-2xl ring-2 ring-accent"
           : "hover:scale-[1.02] hover:shadow-xl"
       }`}
-      title={`${appointment.clientName} • ${service.name} • ${colors.label}${
-        appointment.notes ? "\nБележка: " + appointment.notes : ""
+      title={`${appointment.clientName} • ${service.name} • ${statusLabel}${
+        appointment.notes ? "\n📝 " + appointment.notes : ""
       }`}
     >
       <div className="flex items-center justify-between gap-1">
@@ -1042,7 +1061,7 @@ function AppointmentBlock({
         }}
         onClick={(e) => e.stopPropagation()}
         className="group/handle absolute inset-x-0 bottom-0 flex h-2.5 cursor-ns-resize items-center justify-center"
-        title="Влачи за смяна на времетраене"
+        title={t("calendar.resizeHandle")}
       >
         <span className="h-1 w-6 rounded-full bg-bone/20 group-hover/handle:bg-accent" />
       </div>
@@ -1063,6 +1082,7 @@ function NewAppointmentModal({
   onClose: () => void;
   onSave: (a: Appointment) => void;
 }) {
+  const { t, localeTag } = useT();
   const barber = barbers.find((b) => b.id === barberId);
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -1073,14 +1093,14 @@ function NewAppointmentModal({
 
   const service = services.find((s) => s.id === serviceId);
   const startDate = new Date(startsAt);
-  const startLabel = startDate.toLocaleTimeString("bg-BG", {
+  const startLabel = startDate.toLocaleTimeString(localeTag, {
     hour: "2-digit",
     minute: "2-digit",
   });
   const endLabel = service
     ? new Date(
         startDate.getTime() + service.durationMin * 60_000
-      ).toLocaleTimeString("bg-BG", {
+      ).toLocaleTimeString(localeTag, {
         hour: "2-digit",
         minute: "2-digit",
       })
@@ -1115,7 +1135,7 @@ function NewAppointmentModal({
     <ModalShell onClose={onClose}>
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h2 className="font-display text-2xl">Нов час</h2>
+          <h2 className="font-display text-2xl">{t("newAppt.title")}</h2>
           <p className="mt-1 text-sm text-bone-dim">
             {barber?.name} · {startLabel}
             {service ? `–${endLabel}` : ""}
@@ -1125,23 +1145,23 @@ function NewAppointmentModal({
       </div>
       <form className="mt-5 space-y-3" onSubmit={handleSubmit}>
         <div className="grid gap-3 sm:grid-cols-2">
-          <Field label="Име *">
+          <Field label={t("newAppt.firstName")}>
             <input
               type="text"
               value={firstName}
               onChange={(e) => setFirstName(e.target.value)}
-              placeholder="Иван"
+              placeholder={t("newAppt.firstNamePlaceholder")}
               className="input"
               required
               autoFocus
             />
           </Field>
-          <Field label="Фамилия *">
+          <Field label={t("newAppt.lastName")}>
             <input
               type="text"
               value={lastName}
               onChange={(e) => setLastName(e.target.value)}
-              placeholder="Петров"
+              placeholder={t("newAppt.lastNamePlaceholder")}
               className="input"
               required
             />
@@ -1149,7 +1169,7 @@ function NewAppointmentModal({
         </div>
         {!isBarberView && (
           <div className="grid gap-3 sm:grid-cols-2">
-            <Field label="Телефон *">
+            <Field label={t("newAppt.phone")}>
               <input
                 type="tel"
                 value={phone}
@@ -1159,7 +1179,7 @@ function NewAppointmentModal({
                 required
               />
             </Field>
-            <Field label="Имейл">
+            <Field label={t("newAppt.email")}>
               <input
                 type="email"
                 value={email}
@@ -1170,7 +1190,7 @@ function NewAppointmentModal({
             </Field>
           </div>
         )}
-        <Field label="Услуга">
+        <Field label={t("newAppt.service")}>
           <select
             value={serviceId}
             onChange={(e) => setServiceId(e.target.value)}
@@ -1178,17 +1198,17 @@ function NewAppointmentModal({
           >
             {services.map((s) => (
               <option key={s.id} value={s.id}>
-                {s.name} ({s.durationMin} мин · {s.price} лв)
+                {s.name} ({s.durationMin} min · {s.price} {t("common.bgn")})
               </option>
             ))}
           </select>
         </Field>
         {!isBarberView && (
-          <Field label="Бележка">
+          <Field label={t("newAppt.notes")}>
             <textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="напр. ще закъснее с 10 мин..."
+              placeholder={t("newAppt.notesPlaceholder")}
               rows={3}
               className="input resize-none"
             />
@@ -1196,8 +1216,7 @@ function NewAppointmentModal({
         )}
         {isBarberView && (
           <p className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 px-3 py-2 text-[11px] text-emerald-200/80">
-            Като бръснар събираш само име на клиента. Собственикът може да
-            допълни телефон и имейл по-късно.
+            {t("newAppt.barberHint")}
           </p>
         )}
         <div className="flex items-center justify-end gap-3 pt-2">
@@ -1206,14 +1225,14 @@ function NewAppointmentModal({
             onClick={onClose}
             className="rounded-full border border-bone-dim/30 px-5 py-2 text-sm text-bone-dim transition hover:border-bone hover:text-bone"
           >
-            Отказ
+            {t("newAppt.cancel")}
           </button>
           <button
             type="submit"
             disabled={!canSave}
             className="rounded-full bg-accent px-5 py-2 text-sm font-medium text-ink transition hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-40"
           >
-            Запиши часа
+            {t("newAppt.submit")}
           </button>
         </div>
       </form>
@@ -1240,50 +1259,62 @@ function AppointmentDetailsModal({
   onSellProduct: (productId: string) => void;
   onRemoveSale: (saleId: string) => void;
 }) {
+  const { t, localeTag } = useT();
   const service = services.find((s) => s.id === appointment.serviceId)!;
   const barber = barbers.find((b) => b.id === appointment.barberId)!;
   const durationMin = appointment.durationMin ?? service.durationMin;
   const status = effectiveStatus(appointment, durationMin, now);
+  const statusLabel = t(
+    (status === "confirmed"
+      ? "status.confirmed"
+      : status === "in-progress"
+        ? "status.inProgress"
+        : status === "completed"
+          ? "status.completed"
+          : status === "no-show"
+            ? "status.noShow"
+            : "status.cancelled") as TranslationKey
+  );
   const colors = STATUS_COLOR_CLASSES[status];
 
   const startDate = new Date(appointment.startsAt);
-  const startLabel = startDate.toLocaleTimeString("bg-BG", {
+  const startLabel = startDate.toLocaleTimeString(localeTag, {
     hour: "2-digit",
     minute: "2-digit",
   });
   const endLabel = new Date(
     startDate.getTime() + durationMin * 60_000
-  ).toLocaleTimeString("bg-BG", { hour: "2-digit", minute: "2-digit" });
+  ).toLocaleTimeString(localeTag, { hour: "2-digit", minute: "2-digit" });
 
   const statusActions: {
     status: AppointmentStatus;
-    label: string;
+    labelKey: TranslationKey;
+    descKey: TranslationKey;
     icon: string;
-    desc: string;
   }[] = [
     {
       status: "confirmed",
-      label: "Записан",
+      labelKey: "details.action.confirmed",
+      descKey: "details.action.confirmedDesc",
       icon: "📅",
-      desc: "Чака се да дойде",
     },
     {
       status: "in-progress",
-      label: "Дошъл",
+      labelKey: "details.action.inProgress",
+      descKey: "details.action.inProgressDesc",
       icon: "✂️",
-      desc: "В момента се обслужва",
     },
     {
       status: "completed",
-      label: "Платено",
+      labelKey: "details.action.completed",
+      descKey: "details.action.completedDesc",
       icon: "💰",
-      desc: "Услугата приключи",
     },
     {
       status: "no-show",
-      label: "Не дойде",
+      labelKey: "details.action.noShow",
+      descKey: "details.action.noShowDesc",
       icon: "✗",
-      desc: "Клиентът пропусна часа",
     },
   ];
 
@@ -1295,7 +1326,7 @@ function AppointmentDetailsModal({
             className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-medium ${colors.bg} ${colors.ring} ring-1`}
           >
             <span className={`h-2 w-2 rounded-full ${colors.dot}`} />
-            {colors.label}
+            {statusLabel}
           </span>
           <h2 className="mt-2 font-display text-2xl">
             {isBarberView
@@ -1303,34 +1334,37 @@ function AppointmentDetailsModal({
               : appointment.clientName}
           </h2>
           <p className="mt-1 text-sm text-bone-dim">
-            {startLabel}–{endLabel} · {durationMin} мин · {barber.name}
+            {startLabel}–{endLabel} · {durationMin} min · {barber.name}
           </p>
         </div>
         <CloseButton onClose={onClose} />
       </div>
       <dl className="mt-5 space-y-2 rounded-xl border border-ink-muted bg-ink/40 p-4 text-sm">
         <InfoRow
-          label="Услуга"
-          value={`${service.name} (${service.price} лв)`}
+          label={t("details.service")}
+          value={`${service.name} (${service.price} ${t("common.bgn")})`}
         />
         {!isBarberView && (
-          <InfoRow label="Телефон" value={appointment.clientPhone} />
+          <InfoRow label={t("details.phone")} value={appointment.clientPhone} />
         )}
         {!isBarberView && appointment.clientEmail && (
-          <InfoRow label="Имейл" value={appointment.clientEmail} />
+          <InfoRow label={t("details.email")} value={appointment.clientEmail} />
         )}
         {!isBarberView && appointment.notes && (
-          <InfoRow label="Бележка" value={`📝 ${appointment.notes}`} />
+          <InfoRow
+            label={t("details.note")}
+            value={`📝 ${appointment.notes}`}
+          />
         )}
         {isBarberView && (
           <p className="text-[11px] italic text-bone-dim/70">
-            🔒 Лични данни на клиента се виждат само от собственика
+            {t("details.locked")}
           </p>
         )}
       </dl>
       <div className="mt-5">
         <p className="text-xs uppercase tracking-widest text-bone-dim">
-          Промени статуса
+          {t("details.changeStatus")}
         </p>
         <div className="mt-3 grid gap-2 sm:grid-cols-2">
           {statusActions.map((a) => {
@@ -1354,14 +1388,16 @@ function AppointmentDetailsModal({
                 </span>
                 <div className="min-w-0">
                   <p className="text-sm font-medium">
-                    {a.label}
+                    {t(a.labelKey)}
                     {isActive && (
                       <span className="ml-2 text-[10px] text-bone-dim">
-                        (текущ)
+                        {t("details.statusActive")}
                       </span>
                     )}
                   </p>
-                  <p className="truncate text-[11px] text-bone-dim">{a.desc}</p>
+                  <p className="truncate text-[11px] text-bone-dim">
+                    {t(a.descKey)}
+                  </p>
                 </div>
               </button>
             );
@@ -1382,7 +1418,7 @@ function AppointmentDetailsModal({
           onClick={onClose}
           className="rounded-full border border-bone-dim/30 px-5 py-2 text-sm text-bone-dim transition hover:border-bone hover:text-bone"
         >
-          Затвори
+          {t("details.close")}
         </button>
       </div>
     </ModalShell>
@@ -1398,6 +1434,7 @@ function ProductSaleSection({
   onSell: (productId: string) => void;
   onRemove: (saleId: string) => void;
 }) {
+  const { t } = useT();
   const [query, setQuery] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
 
@@ -1423,7 +1460,7 @@ function ProductSaleSection({
   return (
     <div className="mt-5">
       <p className="text-xs uppercase tracking-widest text-bone-dim">
-        Продажба на продукт
+        {t("products.title")}
       </p>
 
       <div className="relative mt-3">
@@ -1436,10 +1473,9 @@ function ProductSaleSection({
           }}
           onFocus={() => setShowDropdown(true)}
           onBlur={() => {
-            // Delay so click on dropdown registers first
             setTimeout(() => setShowDropdown(false), 150);
           }}
-          placeholder="Търси продукт (помада, восък, бранд...)"
+          placeholder={t("products.searchPlaceholder")}
           className="input"
         />
         {showDropdown && matches.length > 0 && (
@@ -1459,10 +1495,13 @@ function ProductSaleSection({
                   <div className="min-w-0">
                     <p className="truncate text-sm font-medium">{p.name}</p>
                     <p className="text-[11px] text-bone-dim">
-                      {p.brand} · {p.category} · комисионна {p.commissionPct}%
+                      {p.brand} · {p.category} ·{" "}
+                      {t("products.commissionPct", { pct: p.commissionPct })}
                     </p>
                   </div>
-                  <span className="font-display text-accent">{p.price} лв</span>
+                  <span className="font-display text-accent">
+                    {p.price} {t("common.bgn")}
+                  </span>
                 </button>
               </li>
             ))}
@@ -1470,7 +1509,7 @@ function ProductSaleSection({
         )}
         {showDropdown && query.trim() && matches.length === 0 && (
           <div className="absolute inset-x-0 top-full z-10 mt-1 rounded-xl border border-ink-muted bg-ink-soft p-3 text-sm text-bone-dim shadow-2xl">
-            Няма продукт, който отговаря на „{query}“
+            {t("products.noMatch", { query })}
           </div>
         )}
       </div>
@@ -1488,22 +1527,24 @@ function ProductSaleSection({
                 >
                   <div className="min-w-0">
                     <p className="truncate text-sm">
-                      {product?.name ?? "Изтрит продукт"}
+                      {product?.name ?? t("products.deletedProduct")}
                     </p>
                     <p className="text-[10px] text-bone-dim">
-                      +{commission.toFixed(2)} лв комисионна (
-                      {sale.commissionPct}%)
+                      {t("products.commissionLine", {
+                        amount: commission.toFixed(2),
+                        pct: sale.commissionPct,
+                      })}
                     </p>
                   </div>
                   <div className="flex items-center gap-3">
                     <span className="font-medium text-accent">
-                      {sale.price} лв
+                      {sale.price} {t("common.bgn")}
                     </span>
                     <button
                       type="button"
                       onClick={() => onRemove(sale.id)}
                       className="text-bone-dim transition hover:text-rose-400"
-                      aria-label="Премахни продажба"
+                      aria-label={t("products.removeSale")}
                     >
                       ✗
                     </button>
@@ -1514,14 +1555,16 @@ function ProductSaleSection({
           </ul>
           <div className="mt-2 flex items-center justify-between rounded-lg bg-accent/10 px-3 py-2 text-sm">
             <span className="text-bone-dim">
-              Общо продукти ({sales.length})
+              {t("products.totalLabel", { count: sales.length })}
             </span>
             <span>
               <span className="font-display text-base text-accent">
-                {totalSales.toFixed(2)} лв
+                {totalSales.toFixed(2)} {t("common.bgn")}
               </span>
               <span className="ml-2 text-[11px] text-bone-dim">
-                комисионна {totalCommission.toFixed(2)} лв
+                {t("products.commissionTotal", {
+                  amount: totalCommission.toFixed(2),
+                })}
               </span>
             </span>
           </div>
@@ -1548,6 +1591,7 @@ function TimeOffRequestModal({
     notes?: string;
   }) => void;
 }) {
+  const { t } = useT();
   const barber = barbers.find((b) => b.id === barberId);
   const [startDate, setStartDate] = useState(defaultStartDate);
   const [endDate, setEndDate] = useState(defaultStartDate);
@@ -1572,9 +1616,9 @@ function TimeOffRequestModal({
     <ModalShell onClose={onClose}>
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h2 className="font-display text-2xl">🏖️ Заявка за отсъствие</h2>
+          <h2 className="font-display text-2xl">{t("timeOff.title")}</h2>
           <p className="mt-1 text-sm text-bone-dim">
-            {barber?.name} · Собственикът ще получи известие за одобрение
+            {barber?.name} · {t("timeOff.subtitle")}
           </p>
         </div>
         <CloseButton onClose={onClose} />
@@ -1582,7 +1626,7 @@ function TimeOffRequestModal({
 
       <form className="mt-5 space-y-3" onSubmit={handleSubmit}>
         <div className="grid gap-3 sm:grid-cols-2">
-          <Field label="Дата от *">
+          <Field label={t("timeOff.fromDate")}>
             <input
               type="date"
               value={startDate}
@@ -1592,7 +1636,7 @@ function TimeOffRequestModal({
               autoFocus
             />
           </Field>
-          <Field label="Дата до *">
+          <Field label={t("timeOff.toDate")}>
             <input
               type="date"
               value={endDate}
@@ -1604,34 +1648,32 @@ function TimeOffRequestModal({
           </Field>
         </div>
 
-        <Field label="Причина *">
+        <Field label={t("timeOff.reason")}>
           <select
             value={reason}
             onChange={(e) => setReason(e.target.value as TimeOffReason)}
             className="input"
           >
-            <option value="vacation">Отпуска</option>
-            <option value="course">Курс / обучение</option>
-            <option value="sick">Болничен</option>
-            <option value="personal">Лична причина</option>
-            <option value="other">Друго</option>
+            <option value="vacation">{t("timeOff.reason.vacation")}</option>
+            <option value="course">{t("timeOff.reason.course")}</option>
+            <option value="sick">{t("timeOff.reason.sick")}</option>
+            <option value="personal">{t("timeOff.reason.personal")}</option>
+            <option value="other">{t("timeOff.reason.other")}</option>
           </select>
         </Field>
 
-        <Field label="Допълнително (по желание)">
+        <Field label={t("timeOff.notes")}>
           <textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            placeholder="напр. семинар в чужбина; ще предам клиентите на Иван..."
+            placeholder={t("timeOff.notesPlaceholder")}
             rows={3}
             className="input resize-none"
           />
         </Field>
 
         {!canSubmit && startDate && endDate && startDate > endDate && (
-          <p className="text-xs text-rose-400">
-            Крайната дата трябва да е след началната.
-          </p>
+          <p className="text-xs text-rose-400">{t("timeOff.error.dates")}</p>
         )}
 
         <div className="flex items-center justify-end gap-3 pt-2">
@@ -1640,14 +1682,14 @@ function TimeOffRequestModal({
             onClick={onClose}
             className="rounded-full border border-bone-dim/30 px-5 py-2 text-sm text-bone-dim transition hover:border-bone hover:text-bone"
           >
-            Отказ
+            {t("timeOff.cancel")}
           </button>
           <button
             type="submit"
             disabled={!canSubmit}
             className="rounded-full bg-accent px-5 py-2 text-sm font-medium text-ink transition hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-40"
           >
-            Изпрати заявката
+            {t("timeOff.submit")}
           </button>
         </div>
       </form>
@@ -1666,6 +1708,7 @@ function MoveConfirmModal({
   onConfirm: () => void;
   onCancel: () => void;
 }) {
+  const { t } = useT();
   const fromBarber = barbers.find((b) => b.id === info.fromBarberId);
   const toBarber = barbers.find((b) => b.id === info.toBarberId);
   const fromTime = formatMinutesToTime(info.fromStartMinutes);
@@ -1681,7 +1724,7 @@ function MoveConfirmModal({
     <ModalShell onClose={onCancel}>
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h2 className="font-display text-2xl">Преместване на час?</h2>
+          <h2 className="font-display text-2xl">{t("move.title")}</h2>
           {appointment && (
             <p className="mt-1 text-sm text-bone-dim">
               {appointment.clientName}
@@ -1694,7 +1737,7 @@ function MoveConfirmModal({
       <div className="mt-5 space-y-3">
         <div className="rounded-xl border border-ink-muted bg-ink/40 p-4">
           <p className="text-xs uppercase tracking-widest text-bone-dim">
-            От
+            {t("move.from")}
           </p>
           <p className="mt-1 font-display text-lg">
             {fromTime}–{fromEnd}
@@ -1703,7 +1746,9 @@ function MoveConfirmModal({
         </div>
         <div className="flex justify-center text-accent">↓</div>
         <div className="rounded-xl border border-accent/60 bg-accent/10 p-4">
-          <p className="text-xs uppercase tracking-widest text-accent">На</p>
+          <p className="text-xs uppercase tracking-widest text-accent">
+            {t("move.to")}
+          </p>
           <p className="mt-1 font-display text-lg">
             {toTime}–{toEnd}
           </p>
@@ -1717,14 +1762,14 @@ function MoveConfirmModal({
           onClick={onCancel}
           className="rounded-full border border-bone-dim/30 px-5 py-2 text-sm text-bone-dim transition hover:border-bone hover:text-bone"
         >
-          Отказ
+          {t("move.cancel")}
         </button>
         <button
           type="button"
           onClick={onConfirm}
           className="rounded-full bg-accent px-5 py-2 text-sm font-medium text-ink transition hover:bg-accent-hover"
         >
-          Премести
+          {t("move.confirm")}
         </button>
       </div>
     </ModalShell>

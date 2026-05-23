@@ -11,6 +11,7 @@ import {
 } from "@/lib/mock-data";
 import { loadSales } from "@/lib/sales-store";
 import { useCalendar } from "@/lib/calendar-context";
+import { useT } from "@/lib/i18n";
 
 function generateLast14Days() {
   const data: { label: string; appointments: number; revenue: number }[] = [];
@@ -31,6 +32,7 @@ function generateLast14Days() {
 
 export default function ReportsPage() {
   const { currentLocationId, viewAs } = useCalendar();
+  const { t, localeTag } = useT();
   const [sales, setSales] = useState<ProductSale[]>([]);
   const isBarberView = viewAs !== "owner";
   const currentLocation = locations.find((l) => l.id === currentLocationId);
@@ -126,42 +128,62 @@ export default function ReportsPage() {
   return (
     <main className="h-full overflow-y-auto px-4 py-6 md:px-6">
       <div>
-        <h1 className="font-display text-2xl md:text-3xl">Отчети</h1>
+        <h1 className="font-display text-2xl md:text-3xl">
+          {t("reports.title")}
+        </h1>
         <p className="mt-1 text-sm text-bone-dim">
           {isBarberView
-            ? `Личен преглед — ${visibleBarbers[0]?.name ?? ""}`
-            : `Преглед за локация ${currentLocation?.name ?? ""}`}
+            ? t("reports.subtitle.barber", {
+                name: visibleBarbers[0]?.name ?? "",
+              })
+            : t("reports.subtitle.owner", {
+                location: currentLocation?.name ?? "",
+              })}
         </p>
       </div>
 
       <section className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Kpi
-          label="Часове"
+          label={t("reports.kpi.appointments")}
           value={totalAppts.toString()}
           delta="+12%"
           trend="up"
+          deltaSuffix={t("reports.kpi.vsPrevious")}
         />
         <Kpi
-          label="Приходи"
-          value={`${totalRevenue.toLocaleString("bg-BG")} лв.`}
+          label={t("reports.kpi.revenue")}
+          value={`${totalRevenue.toLocaleString(localeTag)} ${t("common.bgn")}`}
           delta="+34%"
           trend="up"
+          deltaSuffix={t("reports.kpi.vsPrevious")}
         />
-        <Kpi label="Нови клиенти" value="24" delta="+8%" trend="up" />
-        <Kpi label="Повторни визити" value="71%" delta="-2%" trend="down" />
+        <Kpi
+          label={t("reports.kpi.newClients")}
+          value="24"
+          delta="+8%"
+          trend="up"
+          deltaSuffix={t("reports.kpi.vsPrevious")}
+        />
+        <Kpi
+          label={t("reports.kpi.returningRate")}
+          value="71%"
+          delta="-2%"
+          trend="down"
+          deltaSuffix={t("reports.kpi.vsPrevious")}
+        />
       </section>
 
       <section className="mt-6 rounded-2xl border border-ink-muted bg-ink-soft p-5">
         <div className="flex items-end justify-between">
           <div>
             <p className="text-xs uppercase tracking-widest text-bone-dim">
-              Часове по дни
+              {t("reports.chart.labelHours")}
             </p>
-            <p className="font-display text-xl">Последни 14 дни</p>
+            <p className="font-display text-xl">{t("reports.chart.last14")}</p>
           </div>
           <div className="flex items-center gap-2 text-xs text-bone-dim">
             <span className="inline-block h-3 w-3 rounded-sm bg-accent" />
-            Часове
+            {t("reports.chart.legendHours")}
           </div>
         </div>
         <BarChart data={chartData} max={maxAppts} />
@@ -170,7 +192,7 @@ export default function ReportsPage() {
       <section className="mt-6 grid gap-4 lg:grid-cols-2">
         <div className="rounded-2xl border border-ink-muted bg-ink-soft p-5">
           <p className="text-xs uppercase tracking-widest text-bone-dim">
-            Топ услуги (днес)
+            {t("reports.top.services")}
           </p>
           <ul className="mt-4 space-y-3">
             {serviceCounts.map((s) => (
@@ -178,7 +200,10 @@ export default function ReportsPage() {
                 <div className="flex items-center justify-between text-sm">
                   <span>{s.service.name}</span>
                   <span className="font-medium text-accent">
-                    {s.count} {s.count === 1 ? "час" : "часа"}
+                    {s.count}{" "}
+                    {s.count === 1
+                      ? t("reports.top.servicesUnit")
+                      : t("reports.top.servicesUnitPlural")}
                   </span>
                 </div>
                 <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-ink-muted/40">
@@ -199,9 +224,11 @@ export default function ReportsPage() {
         <div className="rounded-2xl border border-ink-muted bg-ink-soft p-5">
           <div className="flex items-end justify-between">
             <p className="text-xs uppercase tracking-widest text-bone-dim">
-              Дневен оборот по бръснар
+              {t("reports.team.title")}
             </p>
-            <span className="text-[10px] text-bone-dim">услуги + продукти</span>
+            <span className="text-[10px] text-bone-dim">
+              {t("reports.team.subtitle")}
+            </span>
           </div>
           <ul className="mt-4 divide-y divide-ink-muted/40">
             {barberLoad.map((b) => (
@@ -217,27 +244,42 @@ export default function ReportsPage() {
                     <div>
                       <p className="text-sm font-medium">{b.barber.name}</p>
                       <p className="text-xs text-bone-dim">
-                        {b.count} {b.count === 1 ? "час" : "часа"}
+                        {b.count}{" "}
+                        {b.count === 1
+                          ? t("reports.team.hour")
+                          : t("reports.team.hours")}
                         {b.productCount > 0 && (
                           <>
                             {" · "}
                             {b.productCount}{" "}
-                            {b.productCount === 1 ? "продукт" : "продукта"}
+                            {b.productCount === 1
+                              ? t("reports.team.product")
+                              : t("reports.team.products")}
                           </>
                         )}
                       </p>
                     </div>
                   </div>
                   <p className="font-display text-lg text-accent">
-                    {b.total.toFixed(0)} лв.
+                    {b.total.toFixed(0)} {t("common.bgn")}
                   </p>
                 </div>
                 {b.productRevenue > 0 && (
                   <div className="mt-2 flex gap-3 text-[11px] text-bone-dim">
-                    <span>Услуги: {b.apptRevenue} лв</span>
-                    <span>+ Продукти: {b.productRevenue} лв</span>
+                    <span>
+                      {t("reports.team.servicesLine", {
+                        amount: b.apptRevenue,
+                      })}
+                    </span>
+                    <span>
+                      {t("reports.team.productsLine", {
+                        amount: b.productRevenue,
+                      })}
+                    </span>
                     <span className="ml-auto text-emerald-400">
-                      Комисионна: {b.productCommission.toFixed(2)} лв
+                      {t("reports.team.commissionLine", {
+                        amount: b.productCommission.toFixed(2),
+                      })}
                     </span>
                   </div>
                 )}
@@ -251,23 +293,26 @@ export default function ReportsPage() {
         <div className="flex items-end justify-between">
           <div>
             <p className="text-xs uppercase tracking-widest text-bone-dim">
-              Продажби на продукти (днес)
+              {t("reports.products.title")}
             </p>
             <p className="mt-1 font-display text-xl">
-              {totalProductRevenue.toFixed(0)} лв
+              {totalProductRevenue.toFixed(0)} {t("common.bgn")}
               <span className="ml-3 text-xs font-normal text-bone-dim">
-                комисионни за екипа: {totalProductCommission.toFixed(2)} лв
+                {t("reports.products.subtitle", {
+                  amount: totalProductCommission.toFixed(2),
+                })}
               </span>
             </p>
           </div>
           <span className="text-[10px] text-bone-dim">
-            {sales.length} {sales.length === 1 ? "продажба" : "продажби"}
+            {sales.length === 1
+              ? t("reports.products.salesCount", { count: sales.length })
+              : t("reports.products.salesCountPlural", { count: sales.length })}
           </span>
         </div>
         {topProducts.length === 0 ? (
           <p className="mt-4 text-sm text-bone-dim">
-            Все още няма продадени продукти днес. Отвори час от календара и
-            добави продажба на продукт от долната секция.
+            {t("reports.products.empty")}
           </p>
         ) : (
           <ul className="mt-4 space-y-2">
@@ -281,11 +326,15 @@ export default function ReportsPage() {
                     {product!.name}
                   </p>
                   <p className="text-[11px] text-bone-dim">
-                    {product!.brand} · {count}{" "}
-                    {count === 1 ? "продажба" : "продажби"}
+                    {product!.brand} ·{" "}
+                    {count === 1
+                      ? t("reports.products.timesSold", { count })
+                      : t("reports.products.timesSoldPlural", { count })}
                   </p>
                 </div>
-                <span className="font-display text-accent">{revenue} лв</span>
+                <span className="font-display text-accent">
+                  {revenue} {t("common.bgn")}
+                </span>
               </li>
             ))}
           </ul>
@@ -300,11 +349,13 @@ function Kpi({
   value,
   delta,
   trend,
+  deltaSuffix,
 }: {
   label: string;
   value: string;
   delta: string;
   trend: "up" | "down";
+  deltaSuffix: string;
 }) {
   return (
     <div className="rounded-2xl border border-ink-muted bg-ink-soft p-4">
@@ -315,7 +366,7 @@ function Kpi({
           trend === "up" ? "text-emerald-400" : "text-rose-400"
         }`}
       >
-        {trend === "up" ? "▲" : "▼"} {delta} спрямо предходния период
+        {trend === "up" ? "▲" : "▼"} {delta} {deltaSuffix}
       </p>
     </div>
   );

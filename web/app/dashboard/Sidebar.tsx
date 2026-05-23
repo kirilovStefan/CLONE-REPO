@@ -4,25 +4,33 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useMemo, useState } from "react";
 import { useCalendar, isSameDay, startOfDay } from "@/lib/calendar-context";
+import { useT } from "@/lib/i18n";
 import { locations } from "@/lib/mock-data";
+import type { TranslationKey } from "@/lib/translations";
 
 type Item = {
   href: string;
-  label: string;
+  labelKey: TranslationKey;
   icon: string;
-  badge?: string;
+  badgeKey?: TranslationKey;
   soon?: boolean;
 };
 
 const items: Item[] = [
-  { href: "/dashboard", label: "Календар", icon: "📅" },
-  { href: "/dashboard/reports", label: "Отчети", icon: "📊" },
-  { href: "/dashboard/clients", label: "Клиенти", icon: "👥", soon: true },
-  { href: "/dashboard/team", label: "Екип", icon: "✂️", soon: true, badge: "new" },
-  { href: "/dashboard/services", label: "Услуги", icon: "🧾", soon: true },
-  { href: "/dashboard/finance", label: "Финанси", icon: "💰", soon: true },
-  { href: "/dashboard/inventory", label: "Стоки", icon: "📦", soon: true },
-  { href: "/dashboard/settings", label: "Настройки", icon: "⚙️", soon: true },
+  { href: "/dashboard", labelKey: "nav.calendar", icon: "📅" },
+  { href: "/dashboard/reports", labelKey: "nav.reports", icon: "📊" },
+  { href: "/dashboard/clients", labelKey: "nav.clients", icon: "👥", soon: true },
+  {
+    href: "/dashboard/team",
+    labelKey: "nav.team",
+    icon: "✂️",
+    soon: true,
+    badgeKey: "nav.new",
+  },
+  { href: "/dashboard/services", labelKey: "nav.services", icon: "🧾", soon: true },
+  { href: "/dashboard/finance", labelKey: "nav.finance", icon: "💰", soon: true },
+  { href: "/dashboard/inventory", labelKey: "nav.inventory", icon: "📦", soon: true },
+  { href: "/dashboard/settings", labelKey: "nav.settings", icon: "⚙️", soon: true },
 ];
 
 export function Sidebar() {
@@ -38,6 +46,7 @@ export function Sidebar() {
 
 function BusinessHeader() {
   const { currentLocationId, setCurrentLocationId } = useCalendar();
+  const { t } = useT();
   const [open, setOpen] = useState(false);
   const location = locations.find((l) => l.id === currentLocationId);
 
@@ -51,16 +60,16 @@ function BusinessHeader() {
       >
         <span
           className="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-accent font-display text-xl font-bold text-ink"
-          title="Качи лого (скоро)"
+          title={t("sidebar.uploadLogo")}
         >
           B
         </span>
         <div className="min-w-0 flex-1">
           <p className="truncate font-display text-base leading-tight">
-            My Barbershop
+            {t("sidebar.businessName")}
           </p>
           <p className="truncate text-[10px] uppercase tracking-widest text-bone-dim">
-            📍 {location?.name ?? "Изберете локация"}
+            📍 {location?.name ?? t("sidebar.chooseLocation")}
           </p>
         </div>
         <span className="text-bone-dim">▾</span>
@@ -69,7 +78,7 @@ function BusinessHeader() {
       {open && (
         <div className="absolute inset-x-3 top-full z-30 mt-1 rounded-xl border border-ink-muted bg-ink-soft shadow-2xl">
           <div className="border-b border-ink-muted/30 px-3 py-2 text-[10px] uppercase tracking-widest text-bone-dim">
-            Локации
+            {t("sidebar.locations")}
           </div>
           {locations.map((loc) => {
             const isActive = loc.id === currentLocationId;
@@ -103,7 +112,7 @@ function BusinessHeader() {
             type="button"
             onMouseDown={(e) => {
               e.preventDefault();
-              alert("Скоро: добавяне на нова локация");
+              alert(t("sidebar.addLocationSoon"));
               setOpen(false);
             }}
             className="flex w-full items-center gap-3 rounded-b-xl border-t border-ink-muted/40 px-3 py-2.5 text-left text-sm text-bone-dim transition hover:bg-ink-muted/40 hover:text-accent"
@@ -111,7 +120,7 @@ function BusinessHeader() {
             <span className="grid h-8 w-8 place-items-center rounded-md bg-ink-muted/30 text-bone-dim">
               +
             </span>
-            Добави нова локация
+            {t("sidebar.addLocation")}
           </button>
         </div>
       )}
@@ -121,6 +130,7 @@ function BusinessHeader() {
 
 function MiniCalendar() {
   const { selectedDate, setSelectedDate } = useCalendar();
+  const { t, localeTag } = useT();
   const today = useMemo(() => startOfDay(new Date()), []);
 
   const [viewMonth, setViewMonth] = useState<Date>(() => {
@@ -130,16 +140,15 @@ function MiniCalendar() {
     return d;
   });
 
-  const monthLabel = viewMonth.toLocaleDateString("bg-BG", {
+  const monthLabel = viewMonth.toLocaleDateString(localeTag, {
     month: "long",
     year: "numeric",
   });
 
-  // Build 6-week grid (Monday-first)
   const days = useMemo(() => {
     const firstOfMonth = new Date(viewMonth);
-    const weekday = firstOfMonth.getDay(); // 0=Sun..6=Sat
-    const startOffset = (weekday + 6) % 7; // Monday-first
+    const weekday = firstOfMonth.getDay();
+    const startOffset = (weekday + 6) % 7;
     const gridStart = new Date(firstOfMonth);
     gridStart.setDate(firstOfMonth.getDate() - startOffset);
 
@@ -151,6 +160,18 @@ function MiniCalendar() {
     }
     return arr;
   }, [viewMonth]);
+
+  // Generate localized weekday labels (Monday-first)
+  const weekdayLabels = useMemo(() => {
+    const labels: string[] = [];
+    const ref = new Date(2024, 0, 1); // Monday Jan 1 2024
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(ref);
+      d.setDate(ref.getDate() + i);
+      labels.push(d.toLocaleDateString(localeTag, { weekday: "short" }));
+    }
+    return labels;
+  }, [localeTag]);
 
   function goToPrevMonth() {
     const d = new Date(viewMonth);
@@ -178,7 +199,7 @@ function MiniCalendar() {
           type="button"
           onClick={goToPrevMonth}
           className="grid h-6 w-6 place-items-center rounded text-bone-dim transition hover:bg-ink-muted/40 hover:text-bone"
-          aria-label="Предходен месец"
+          aria-label={t("sidebar.prevMonth")}
         >
           ‹
         </button>
@@ -186,7 +207,7 @@ function MiniCalendar() {
           type="button"
           onClick={goToToday}
           className="text-xs font-medium capitalize text-bone transition hover:text-accent"
-          title="Към днешен ден"
+          title={t("sidebar.gotoToday")}
         >
           {monthLabel}
         </button>
@@ -194,14 +215,14 @@ function MiniCalendar() {
           type="button"
           onClick={goToNextMonth}
           className="grid h-6 w-6 place-items-center rounded text-bone-dim transition hover:bg-ink-muted/40 hover:text-bone"
-          aria-label="Следващ месец"
+          aria-label={t("sidebar.nextMonth")}
         >
           ›
         </button>
       </div>
 
       <div className="grid grid-cols-7 gap-0.5">
-        {["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Нд"].map((d) => (
+        {weekdayLabels.map((d) => (
           <span
             key={d}
             className="py-1 text-center text-[9px] uppercase tracking-wider text-bone-dim/70"
@@ -211,14 +232,14 @@ function MiniCalendar() {
         ))}
         {days.map((d) => {
           const isCurrentMonth = d.getMonth() === viewMonth.getMonth();
-          const isToday = isSameDay(d, today);
+          const isTodayDay = isSameDay(d, today);
           const isSelected = isSameDay(d, selectedDate);
 
           const baseClasses =
             "relative grid aspect-square place-items-center rounded text-xs transition";
           const textColor = !isCurrentMonth
             ? "text-bone-dim/30"
-            : isToday
+            : isTodayDay
               ? "text-red-400 font-bold"
               : "text-bone";
           const selection = isSelected
@@ -233,7 +254,7 @@ function MiniCalendar() {
               className={`${baseClasses} ${textColor} ${selection}`}
             >
               <span>{d.getDate()}</span>
-              {isToday && (
+              {isTodayDay && (
                 <span className="absolute bottom-0.5 h-0.5 w-0.5 rounded-full bg-red-500" />
               )}
             </button>
@@ -246,6 +267,7 @@ function MiniCalendar() {
 
 function Nav() {
   const pathname = usePathname();
+  const { t } = useT();
   return (
     <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-2">
       {items.map((item) => {
@@ -265,16 +287,16 @@ function Nav() {
           >
             <span className="flex items-center gap-3">
               <span className="text-base">{item.icon}</span>
-              <span>{item.label}</span>
+              <span>{t(item.labelKey)}</span>
             </span>
-            {item.badge && (
+            {item.badgeKey && (
               <span className="rounded-full bg-accent px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-ink">
-                {item.badge}
+                {t(item.badgeKey)}
               </span>
             )}
-            {item.soon && !item.badge && (
+            {item.soon && !item.badgeKey && (
               <span className="text-[10px] uppercase tracking-wider text-bone-dim/60">
-                скоро
+                {t("nav.soon")}
               </span>
             )}
           </Link>
@@ -285,9 +307,10 @@ function Nav() {
 }
 
 function Footer() {
+  const { t } = useT();
   return (
     <div className="border-t border-ink-muted/40 px-4 py-3 text-[11px] text-bone-dim">
-      Демо режим — данните са локални
+      {t("sidebar.demoFooter")}
     </div>
   );
 }

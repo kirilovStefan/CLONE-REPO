@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState, type ReactNode } from "react";
 import { Sidebar } from "./Sidebar";
 import { CalendarProvider, useCalendar } from "@/lib/calendar-context";
+import { I18nProvider, useT, type Locale } from "@/lib/i18n";
 import {
   barbers,
   TIME_OFF_REASON_LABEL,
@@ -12,21 +13,25 @@ import {
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   return (
-    <CalendarProvider>
-      <div className="flex h-screen overflow-hidden bg-ink">
-        <Sidebar />
-        <div className="flex min-w-0 flex-1 flex-col">
-          <TopBar />
-          <div className="flex-1 overflow-hidden">{children}</div>
+    <I18nProvider>
+      <CalendarProvider>
+        <div className="flex h-screen overflow-hidden bg-ink">
+          <Sidebar />
+          <div className="flex min-w-0 flex-1 flex-col">
+            <TopBar />
+            <div className="flex-1 overflow-hidden">{children}</div>
+          </div>
         </div>
-      </div>
-    </CalendarProvider>
+      </CalendarProvider>
+    </I18nProvider>
   );
 }
 
 function TopBar() {
+  const { t } = useT();
   return (
     <header className="relative z-40 flex shrink-0 items-center justify-end gap-3 border-b border-ink-muted/40 bg-ink/95 px-6 py-2.5 backdrop-blur">
+      <LanguageSwitcher />
       <NotificationBell />
       <ViewAsSelector />
       <span className="text-bone-dim/30">·</span>
@@ -41,10 +46,63 @@ function TopBar() {
         href="/"
         className="text-xs text-bone-dim transition hover:text-bone"
       >
-        ← На сайта
+        {t("top.toSite")}
       </Link>
       <UserAvatar />
     </header>
+  );
+}
+
+function LanguageSwitcher() {
+  const { locale, setLocale, t } = useT();
+  const [open, setOpen] = useState(false);
+
+  const languages: { code: Locale; flag: string; label: string }[] = [
+    { code: "bg", flag: "🇧🇬", label: t("lang.bg") },
+    { code: "en", flag: "🇬🇧", label: t("lang.en") },
+  ];
+  const current = languages.find((l) => l.code === locale) ?? languages[0];
+
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        onBlur={() => setTimeout(() => setOpen(false), 200)}
+        className="flex items-center gap-1.5 rounded-lg border border-ink-muted/60 px-2.5 py-1.5 text-sm transition hover:border-accent"
+        title={t("lang.label")}
+      >
+        <span>{current.flag}</span>
+        <span className="font-medium uppercase">{current.code}</span>
+        <span className="text-bone-dim">▾</span>
+      </button>
+
+      {open && (
+        <div className="absolute right-0 top-full z-50 mt-1 w-44 overflow-hidden rounded-xl border border-ink-muted bg-ink-soft shadow-2xl">
+          {languages.map((lang) => {
+            const isActive = lang.code === locale;
+            return (
+              <button
+                key={lang.code}
+                type="button"
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  setLocale(lang.code);
+                  setOpen(false);
+                }}
+                className={`flex w-full items-center gap-3 px-3 py-2.5 text-left transition hover:bg-ink-muted/40 ${
+                  isActive ? "bg-accent/10" : ""
+                }`}
+              >
+                <span className="text-lg">{lang.flag}</span>
+                <span className="flex-1 text-sm">{lang.label}</span>
+                {isActive && <span className="text-accent">✓</span>}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -56,6 +114,7 @@ function NotificationBell() {
     rejectTimeOff,
     cancelTimeOff,
   } = useCalendar();
+  const { t } = useT();
   const [open, setOpen] = useState(false);
 
   const isOwner = viewAs === "owner";
@@ -80,8 +139,8 @@ function NotificationBell() {
         onClick={() => setOpen((v) => !v)}
         onBlur={() => setTimeout(() => setOpen(false), 200)}
         className="relative grid h-9 w-9 place-items-center rounded-lg border border-ink-muted/60 text-base transition hover:border-accent"
-        aria-label="Известия"
-        title="Известия"
+        aria-label={t("bell.title")}
+        title={t("bell.title")}
       >
         🔔
         {badgeCount > 0 && (
@@ -95,12 +154,12 @@ function NotificationBell() {
         <div className="absolute right-0 top-full z-50 mt-1 w-80 overflow-hidden rounded-xl border border-ink-muted bg-ink-soft shadow-2xl">
           <div className="border-b border-ink-muted/40 px-3 py-2">
             <p className="text-xs uppercase tracking-widest text-bone-dim">
-              {isOwner ? "Заявки за отсъствие" : "Моите заявки"}
+              {isOwner ? t("bell.ownerHeader") : t("bell.barberHeader")}
             </p>
           </div>
           {visible.length === 0 ? (
             <p className="px-4 py-6 text-center text-sm text-bone-dim">
-              {isOwner ? "Няма заявки" : "Все още нямаш изпратени заявки"}
+              {isOwner ? t("bell.empty.owner") : t("bell.empty.barber")}
             </p>
           ) : (
             <ul className="max-h-96 overflow-y-auto divide-y divide-ink-muted/40">
@@ -135,6 +194,7 @@ function TimeOffRow({
   onReject: () => void;
   onCancel: () => void;
 }) {
+  const { t, localeTag } = useT();
   const barber = barbers.find((b) => b.id === request.barberId);
   const initials = barber
     ? barber.name
@@ -142,30 +202,32 @@ function TimeOffRow({
         .map((n) => n[0])
         .join("")
     : "?";
-  const startLabel = new Date(request.startDate).toLocaleDateString("bg-BG", {
+  const startLabel = new Date(request.startDate).toLocaleDateString(localeTag, {
     day: "numeric",
     month: "short",
   });
-  const endLabel = new Date(request.endDate).toLocaleDateString("bg-BG", {
+  const endLabel = new Date(request.endDate).toLocaleDateString(localeTag, {
     day: "numeric",
     month: "short",
   });
 
   const statusBadge: Record<typeof request.status, { label: string; cls: string }> = {
     pending: {
-      label: "Чака",
+      label: t("timeOff.status.pending"),
       cls: "bg-amber-500/30 text-amber-200 ring-1 ring-amber-400/60",
     },
     approved: {
-      label: "Одобрена",
+      label: t("timeOff.status.approved"),
       cls: "bg-emerald-500/30 text-emerald-200 ring-1 ring-emerald-400/60",
     },
     rejected: {
-      label: "Отказана",
+      label: t("timeOff.status.rejected"),
       cls: "bg-rose-500/30 text-rose-200 ring-1 ring-rose-400/60",
     },
   };
   const sb = statusBadge[request.status];
+
+  const reasonLabel = t(`timeOff.reason.${request.reason}` as const);
 
   return (
     <li className="px-3 py-3">
@@ -183,7 +245,7 @@ function TimeOffRow({
             </span>
           </div>
           <p className="mt-0.5 text-[11px] text-bone-dim">
-            {TIME_OFF_REASON_LABEL[request.reason]} · {startLabel} – {endLabel}
+            {reasonLabel} · {startLabel} – {endLabel}
           </p>
           {request.notes && (
             <p className="mt-1 text-[11px] italic text-bone-dim/80">
@@ -202,7 +264,7 @@ function TimeOffRow({
             }}
             className="flex-1 rounded-md bg-emerald-500/20 px-2 py-1.5 text-xs font-medium text-emerald-200 transition hover:bg-emerald-500/30"
           >
-            ✓ Одобри
+            {t("bell.approve")}
           </button>
           <button
             type="button"
@@ -212,7 +274,7 @@ function TimeOffRow({
             }}
             className="flex-1 rounded-md bg-rose-500/20 px-2 py-1.5 text-xs font-medium text-rose-200 transition hover:bg-rose-500/30"
           >
-            ✗ Откажи
+            {t("bell.reject")}
           </button>
         </div>
       )}
@@ -225,7 +287,7 @@ function TimeOffRow({
           }}
           className="mt-2 w-full rounded-md border border-ink-muted px-2 py-1.5 text-xs text-bone-dim transition hover:border-rose-400 hover:text-rose-300"
         >
-          Откажи заявката
+          {t("bell.cancelRequest")}
         </button>
       )}
     </li>
@@ -234,6 +296,7 @@ function TimeOffRow({
 
 function ViewAsSelector() {
   const { viewAs, setViewAs, currentLocationId } = useCalendar();
+  const { t } = useT();
   const [open, setOpen] = useState(false);
   const [passwordPrompt, setPasswordPrompt] = useState(false);
 
@@ -242,7 +305,7 @@ function ViewAsSelector() {
   );
   const isOwner = viewAs === "owner";
   const currentBarber = barbers.find((b) => b.id === viewAs);
-  const currentLabel = isOwner ? "Собственик" : currentBarber?.name ?? "?";
+  const currentLabel = isOwner ? t("viewAs.owner") : currentBarber?.name ?? "?";
 
   function requestOwnerSwitch() {
     setOpen(false);
@@ -272,7 +335,7 @@ function ViewAsSelector() {
         }`}
       >
         <span className="text-[10px] uppercase tracking-widest text-bone-dim">
-          Гледай като
+          {t("viewAs.label")}
         </span>
         <span className="font-medium">{currentLabel}</span>
         <span className="text-bone-dim">▾</span>
@@ -295,18 +358,18 @@ function ViewAsSelector() {
             </span>
             <div className="flex-1">
               <p className="text-sm font-medium">
-                Собственик {!isOwner && "🔒"}
+                {t("viewAs.owner")} {!isOwner && "🔒"}
               </p>
               <p className="text-[11px] text-bone-dim">
                 {isOwner
-                  ? "Пълен достъп до всички локации и данни"
-                  : "Изисква се парола"}
+                  ? t("viewAs.ownerDescUnlocked")
+                  : t("viewAs.ownerDescLocked")}
               </p>
             </div>
             {isOwner && <span className="text-accent">✓</span>}
           </button>
           <div className="border-t border-ink-muted/40 px-3 py-1.5 text-[10px] uppercase tracking-widest text-bone-dim">
-            Бръснари — само техния график
+            {t("viewAs.barbersHeader")}
           </div>
           {locationBarbers.map((b) => {
             const isActive = viewAs === b.id;
@@ -359,6 +422,7 @@ function OwnerPasswordModal({
   onClose: () => void;
   onConfirm: (password: string) => boolean;
 }) {
+  const { t } = useT();
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
@@ -366,7 +430,7 @@ function OwnerPasswordModal({
     e.preventDefault();
     if (!password.trim()) return;
     if (!onConfirm(password)) {
-      setError("Грешна парола. Опитай отново.");
+      setError(t("password.error"));
       setPassword("");
     }
   }
@@ -385,17 +449,15 @@ function OwnerPasswordModal({
             🔒
           </span>
           <div>
-            <h2 className="font-display text-xl">Достъп до собственик</h2>
-            <p className="mt-1 text-sm text-bone-dim">
-              Въведи парола, за да преминеш в изглед на собственика.
-            </p>
+            <h2 className="font-display text-xl">{t("password.title")}</h2>
+            <p className="mt-1 text-sm text-bone-dim">{t("password.subtitle")}</p>
           </div>
         </div>
 
         <form onSubmit={handleSubmit} className="mt-5 space-y-3">
           <div>
             <label className="text-xs uppercase tracking-widest text-bone-dim">
-              Парола
+              {t("password.field")}
             </label>
             <input
               type="password"
@@ -416,7 +478,7 @@ function OwnerPasswordModal({
               <p className="mt-1.5 text-xs text-rose-400">{error}</p>
             ) : (
               <p className="mt-1.5 text-[10px] italic text-bone-dim/70">
-                Демо парола: <span className="font-mono">1234</span>
+                {t("password.hint")} <span className="font-mono">1234</span>
               </p>
             )}
           </div>
@@ -427,14 +489,14 @@ function OwnerPasswordModal({
               onClick={onClose}
               className="rounded-full border border-bone-dim/30 px-5 py-2 text-sm text-bone-dim transition hover:border-bone hover:text-bone"
             >
-              Отказ
+              {t("password.cancel")}
             </button>
             <button
               type="submit"
               disabled={!password.trim()}
               className="rounded-full bg-accent px-5 py-2 text-sm font-medium text-ink transition hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-40"
             >
-              Влез
+              {t("password.submit")}
             </button>
           </div>
         </form>
@@ -445,6 +507,7 @@ function OwnerPasswordModal({
 
 function UserAvatar() {
   const { viewAs } = useCalendar();
+  const { t } = useT();
   const isOwner = viewAs === "owner";
   const barber = isOwner ? null : barbers.find((b) => b.id === viewAs);
   const initials = barber
@@ -460,7 +523,11 @@ function UserAvatar() {
           ? "bg-accent/20 text-accent"
           : "bg-emerald-500/30 text-emerald-200 ring-1 ring-emerald-400/60"
       }`}
-      title={isOwner ? "Собственик" : `Бръснар: ${barber?.name}`}
+      title={
+        isOwner
+          ? t("viewAs.ownerBadge")
+          : `${t("viewAs.barberBadge")}: ${barber?.name}`
+      }
     >
       {initials}
     </div>
