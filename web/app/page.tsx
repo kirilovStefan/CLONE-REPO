@@ -40,12 +40,20 @@ function Nav() {
           <a href="#barbers" className="hover:text-bone">Бръснари</a>
           <Link href="/dashboard" className="hover:text-bone">Демо панел</Link>
         </div>
-        <Link
-          href="/book"
-          className="rounded-full bg-accent px-4 py-2 text-sm font-medium text-ink transition hover:bg-accent-hover"
-        >
-          Запиши час
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/login"
+            className="rounded-full px-4 py-2 text-sm font-medium text-bone-dim transition hover:text-bone"
+          >
+            Вход
+          </Link>
+          <Link
+            href="/signup"
+            className="rounded-full bg-accent px-4 py-2 text-sm font-medium text-ink transition hover:bg-accent-hover"
+          >
+            Регистрирай бизнес
+          </Link>
+        </div>
       </div>
     </nav>
   );
@@ -70,17 +78,17 @@ function Hero() {
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <Link
-              href="/book"
+              href="/signup"
               className="rounded-full bg-accent px-6 py-3 font-medium text-ink transition hover:bg-accent-hover"
             >
-              Запиши час
+              Започни безплатно
             </Link>
-            <a
-              href="#features"
+            <Link
+              href="/dashboard"
               className="rounded-full border border-bone-dim/30 px-6 py-3 font-medium text-bone transition hover:border-bone"
             >
-              Виж функциите
-            </a>
+              Виж демо панела →
+            </Link>
           </div>
           <div className="mt-10 flex items-center gap-6 text-sm text-bone-dim">
             <span>★ 4.9 средна оценка</span>

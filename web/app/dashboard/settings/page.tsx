@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useT } from "@/lib/i18n";
 import { useTheme } from "@/lib/theme-context";
 import type { ThemeMode } from "@/lib/theme-store";
@@ -18,6 +18,7 @@ export default function SettingsPage() {
 
       <div className="mt-6 grid gap-4 lg:grid-cols-2">
         <ThemeSection />
+        <BookingLinkSection />
         <BusinessSection />
         <PlaceholderSection
           titleKey="settings.notifications.title"
@@ -70,6 +71,141 @@ function ThemeSection() {
         })}
       </div>
     </section>
+  );
+}
+
+function BookingLinkSection() {
+  const { t } = useT();
+  const [bookingUrl, setBookingUrl] = useState("");
+  const [copied, setCopied] = useState(false);
+  const [qrOpen, setQrOpen] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setBookingUrl(`${window.location.origin}/book`);
+    }
+  }, []);
+
+  async function handleCopy() {
+    try {
+      await navigator.clipboard.writeText(bookingUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
+    } catch {
+      // fallback for older browsers
+      window.prompt("Копирай линка:", bookingUrl);
+    }
+  }
+
+  return (
+    <section className="rounded-2xl border border-ink-muted bg-ink-soft p-5">
+      <h2 className="font-display text-lg">
+        {t("settings.bookingLink.title")}
+      </h2>
+      <p className="mt-1 text-sm text-bone-dim">
+        {t("settings.bookingLink.subtitle")}
+      </p>
+
+      <div className="mt-4 flex flex-wrap gap-2">
+        <div className="flex min-w-0 flex-1 items-center gap-2 rounded-xl border border-ink-muted bg-ink/40 px-3 py-2">
+          <span className="text-base">🔗</span>
+          <span className="min-w-0 flex-1 truncate font-mono text-xs text-bone">
+            {bookingUrl || "…"}
+          </span>
+        </div>
+        <button
+          type="button"
+          onClick={handleCopy}
+          className={`rounded-lg border px-4 py-2 text-sm transition ${
+            copied
+              ? "border-emerald-500/60 bg-emerald-500/15 text-emerald-200"
+              : "border-ink-muted text-bone-dim hover:border-accent hover:text-bone"
+          }`}
+        >
+          {copied
+            ? t("settings.bookingLink.copied")
+            : t("settings.bookingLink.copy")}
+        </button>
+        <button
+          type="button"
+          onClick={() => setQrOpen(true)}
+          className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-ink transition hover:bg-accent-hover"
+        >
+          {t("settings.bookingLink.openQr")}
+        </button>
+      </div>
+
+      {qrOpen && bookingUrl && (
+        <QrModal url={bookingUrl} onClose={() => setQrOpen(false)} />
+      )}
+    </section>
+  );
+}
+
+function QrModal({ url, onClose }: { url: string; onClose: () => void }) {
+  const { t } = useT();
+  const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=320x320&margin=20&bgcolor=ffffff&color=0b0b0d&data=${encodeURIComponent(
+    url
+  )}`;
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-sm rounded-2xl border border-ink-muted bg-ink-soft p-6 shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-start justify-between gap-4">
+          <h3 className="font-display text-xl">
+            {t("settings.bookingLink.qrTitle")}
+          </h3>
+          <button
+            type="button"
+            onClick={onClose}
+            className="grid h-8 w-8 place-items-center rounded-full text-bone-dim transition hover:bg-ink-muted hover:text-bone"
+          >
+            ✕
+          </button>
+        </div>
+
+        <div className="mt-5 grid place-items-center rounded-xl bg-white p-4">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={qrSrc}
+            alt={t("settings.bookingLink.qrTitle")}
+            width={280}
+            height={280}
+            className="h-auto w-full max-w-[280px]"
+          />
+        </div>
+
+        <p className="mt-4 text-center text-xs text-bone-dim">
+          {t("settings.bookingLink.qrHint")}
+        </p>
+        <p className="mt-1 text-center font-mono text-[11px] text-bone-dim/70 break-all">
+          {url}
+        </p>
+
+        <div className="mt-5 flex justify-end gap-2">
+          <button
+            type="button"
+            onClick={() => window.print()}
+            className="rounded-full border border-bone-dim/30 px-5 py-2 text-sm text-bone-dim transition hover:border-bone hover:text-bone"
+          >
+            {t("settings.bookingLink.print")}
+          </button>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-full bg-accent px-5 py-2 text-sm font-medium text-ink transition hover:bg-accent-hover"
+          >
+            {t("settings.bookingLink.close")}
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 

@@ -4,15 +4,17 @@ import { useState } from "react";
 import Link from "next/link";
 import { services, barbers, type Service, type Barber } from "@/lib/mock-data";
 
-type Step = 1 | 2 | 3 | 4 | 5;
+type Step = 1 | 2 | 3 | 4 | 5 | 6;
 
 type BookingState = {
   service: Service | null;
   barber: Barber | null;
   date: string | null;
   time: string | null;
-  name: string;
+  firstName: string;
+  lastName: string;
   phone: string;
+  email: string;
 };
 
 const initialState: BookingState = {
@@ -20,24 +22,36 @@ const initialState: BookingState = {
   barber: null,
   date: null,
   time: null,
-  name: "",
+  firstName: "",
+  lastName: "",
   phone: "",
+  email: "",
 };
+
+const DEMO_CODE = "1234";
 
 export default function BookPage() {
   const [step, setStep] = useState<Step>(1);
   const [data, setData] = useState<BookingState>(initialState);
+  const [verified, setVerified] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
 
   if (confirmed) {
     return <ConfirmedScreen data={data} />;
   }
 
+  const contactReady =
+    data.firstName.trim() !== "" &&
+    data.lastName.trim() !== "" &&
+    data.phone.trim() !== "" &&
+    data.email.trim() !== "";
+
   const canGoNext =
     (step === 1 && data.service !== null) ||
     (step === 2 && data.barber !== null) ||
     (step === 3 && data.date !== null && data.time !== null) ||
-    (step === 4 && data.name.trim() !== "" && data.phone.trim() !== "");
+    (step === 4 && contactReady) ||
+    (step === 5 && verified);
 
   return (
     <main className="min-h-screen">
@@ -68,13 +82,24 @@ export default function BookPage() {
           )}
           {step === 4 && (
             <ContactStep
-              name={data.name}
+              firstName={data.firstName}
+              lastName={data.lastName}
               phone={data.phone}
-              onNameChange={(name) => setData({ ...data, name })}
+              email={data.email}
+              onFirstNameChange={(firstName) => setData({ ...data, firstName })}
+              onLastNameChange={(lastName) => setData({ ...data, lastName })}
               onPhoneChange={(phone) => setData({ ...data, phone })}
+              onEmailChange={(email) => setData({ ...data, email })}
             />
           )}
-          {step === 5 && <ReviewStep data={data} />}
+          {step === 5 && (
+            <VerificationStep
+              phone={data.phone}
+              verified={verified}
+              onVerified={() => setVerified(true)}
+            />
+          )}
+          {step === 6 && <ReviewStep data={data} />}
         </div>
 
         <div className="mt-10 flex items-center justify-between">
@@ -85,7 +110,7 @@ export default function BookPage() {
           >
             ← Назад
           </button>
-          {step < 5 ? (
+          {step < 6 ? (
             <button
               onClick={() => setStep((s) => (s + 1) as Step)}
               disabled={!canGoNext}
@@ -129,7 +154,14 @@ function TopBar() {
 }
 
 function Progress({ step }: { step: Step }) {
-  const labels = ["Услуга", "Бръснар", "Дата и час", "Контакт", "Преглед"];
+  const labels = [
+    "Услуга",
+    "Бръснар",
+    "Дата и час",
+    "Контакт",
+    "Потвърждение",
+    "Преглед",
+  ];
   return (
     <div>
       <div className="flex items-center justify-between">
@@ -164,7 +196,7 @@ function Progress({ step }: { step: Step }) {
       <div className="mt-3 h-1 w-full overflow-hidden rounded-full bg-ink-muted/40">
         <div
           className="h-full bg-accent transition-all duration-300"
-          style={{ width: `${((step - 1) / 4) * 100}%` }}
+          style={{ width: `${((step - 1) / 5) * 100}%` }}
         />
       </div>
     </div>
@@ -366,15 +398,23 @@ function DateTimeStep({
 }
 
 function ContactStep({
-  name,
+  firstName,
+  lastName,
   phone,
-  onNameChange,
+  email,
+  onFirstNameChange,
+  onLastNameChange,
   onPhoneChange,
+  onEmailChange,
 }: {
-  name: string;
+  firstName: string;
+  lastName: string;
   phone: string;
-  onNameChange: (n: string) => void;
-  onPhoneChange: (p: string) => void;
+  email: string;
+  onFirstNameChange: (v: string) => void;
+  onLastNameChange: (v: string) => void;
+  onPhoneChange: (v: string) => void;
+  onEmailChange: (v: string) => void;
 }) {
   return (
     <section>
@@ -382,22 +422,34 @@ function ContactStep({
       <p className="mt-2 text-bone-dim">
         За да можем да те потвърдим и да ти изпратим напомняне.
       </p>
-      <div className="mt-8 space-y-4">
+      <div className="mt-8 grid gap-4 sm:grid-cols-2">
         <div>
           <label className="text-xs uppercase tracking-widest text-bone-dim">
-            Име
+            Име *
           </label>
           <input
             type="text"
-            value={name}
-            onChange={(e) => onNameChange(e.target.value)}
-            placeholder="Иван Петров"
+            value={firstName}
+            onChange={(e) => onFirstNameChange(e.target.value)}
+            placeholder="Иван"
             className="mt-2 w-full rounded-xl border border-ink-muted bg-ink-soft px-5 py-3 text-bone placeholder:text-bone-dim/60 focus:border-accent focus:outline-none"
           />
         </div>
         <div>
           <label className="text-xs uppercase tracking-widest text-bone-dim">
-            Телефон
+            Фамилия *
+          </label>
+          <input
+            type="text"
+            value={lastName}
+            onChange={(e) => onLastNameChange(e.target.value)}
+            placeholder="Петров"
+            className="mt-2 w-full rounded-xl border border-ink-muted bg-ink-soft px-5 py-3 text-bone placeholder:text-bone-dim/60 focus:border-accent focus:outline-none"
+          />
+        </div>
+        <div>
+          <label className="text-xs uppercase tracking-widest text-bone-dim">
+            Телефон *
           </label>
           <input
             type="tel"
@@ -407,7 +459,130 @@ function ContactStep({
             className="mt-2 w-full rounded-xl border border-ink-muted bg-ink-soft px-5 py-3 text-bone placeholder:text-bone-dim/60 focus:border-accent focus:outline-none"
           />
         </div>
+        <div>
+          <label className="text-xs uppercase tracking-widest text-bone-dim">
+            Имейл *
+          </label>
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => onEmailChange(e.target.value)}
+            placeholder="ivan@example.bg"
+            className="mt-2 w-full rounded-xl border border-ink-muted bg-ink-soft px-5 py-3 text-bone placeholder:text-bone-dim/60 focus:border-accent focus:outline-none"
+          />
+        </div>
       </div>
+      <p className="mt-4 rounded-lg border border-accent/30 bg-accent/5 px-3 py-2 text-xs text-bone-dim">
+        🔒 След следващата стъпка ще ти изпратим код за потвърждение, за да
+        проверим, че си истински. Това спира спама на графика.
+      </p>
+    </section>
+  );
+}
+
+function VerificationStep({
+  phone,
+  verified,
+  onVerified,
+}: {
+  phone: string;
+  verified: boolean;
+  onVerified: () => void;
+}) {
+  const [code, setCode] = useState("");
+  const [error, setError] = useState("");
+  const [resent, setResent] = useState(false);
+
+  function checkCode(value: string) {
+    if (value.length < 4) {
+      setError("");
+      return;
+    }
+    if (value === DEMO_CODE) {
+      setError("");
+      onVerified();
+    } else {
+      setError("Грешен код. Опитай отново.");
+    }
+  }
+
+  return (
+    <section className="text-center">
+      <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-accent/20 text-3xl">
+        {verified ? "✓" : "📱"}
+      </div>
+      <h2 className="mt-4 font-display text-3xl">
+        {verified ? "Потвърдено!" : "Потвърди номера си"}
+      </h2>
+      <p className="mt-2 text-bone-dim">
+        {verified ? (
+          <>Натисни „Напред“, за да продължиш.</>
+        ) : (
+          <>
+            Изпратихме 4-цифрен код на <span className="text-bone">{phone}</span>
+          </>
+        )}
+      </p>
+
+      {!verified && (
+        <>
+          <input
+            type="text"
+            inputMode="numeric"
+            pattern="[0-9]*"
+            maxLength={4}
+            value={code}
+            onChange={(e) => {
+              const v = e.target.value.replace(/[^0-9]/g, "");
+              setCode(v);
+              checkCode(v);
+            }}
+            autoFocus
+            placeholder="••••"
+            className={`mx-auto mt-8 block w-48 rounded-xl border bg-ink-soft px-5 py-4 text-center font-mono text-3xl tracking-[0.5em] text-bone placeholder:text-bone-dim/40 focus:outline-none ${
+              error
+                ? "border-rose-500 focus:border-rose-400"
+                : "border-ink-muted focus:border-accent"
+            }`}
+          />
+
+          {error && (
+            <p className="mt-3 text-sm text-rose-400">{error}</p>
+          )}
+
+          <p className="mt-6 text-sm text-bone-dim">
+            {resent ? (
+              <span className="text-emerald-400">
+                ✓ Изпратихме код отново
+              </span>
+            ) : (
+              <>
+                Не получи код?{" "}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setResent(true);
+                    setTimeout(() => setResent(false), 2000);
+                  }}
+                  className="text-accent transition hover:text-accent-hover"
+                >
+                  Изпрати отново
+                </button>
+              </>
+            )}
+          </p>
+
+          <p className="mt-8 text-[11px] italic text-bone-dim/70">
+            Демо код: <span className="font-mono">{DEMO_CODE}</span>
+          </p>
+        </>
+      )}
+
+      {verified && (
+        <p className="mt-8 text-sm text-emerald-400">
+          ✓ Номерът ти е потвърден успешно
+        </p>
+      )}
     </section>
   );
 }
@@ -429,8 +604,9 @@ function ReviewStep({ data }: { data: BookingState }) {
         : null,
     },
     { label: "Час", value: data.time },
-    { label: "Име", value: data.name },
+    { label: "Име", value: `${data.firstName} ${data.lastName}`.trim() },
     { label: "Телефон", value: data.phone },
+    { label: "Имейл", value: data.email },
   ];
   return (
     <section>

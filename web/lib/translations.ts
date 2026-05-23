@@ -630,6 +630,29 @@ export const translations = {
     en: "Demo data has been cleared.",
   },
   "settings.placeholder.soon": { bg: "Скоро", en: "Coming soon" },
+
+  // Booking link section
+  "settings.bookingLink.title": {
+    bg: "🔗 Линк за резервации",
+    en: "🔗 Booking link",
+  },
+  "settings.bookingLink.subtitle": {
+    bg: "Сподели този линк или QR код с клиентите си",
+    en: "Share this link or QR code with your clients",
+  },
+  "settings.bookingLink.copy": { bg: "Копирай", en: "Copy" },
+  "settings.bookingLink.copied": { bg: "✓ Копирано", en: "✓ Copied" },
+  "settings.bookingLink.openQr": { bg: "📱 Покажи QR", en: "📱 Show QR" },
+  "settings.bookingLink.qrTitle": {
+    bg: "QR код за твоя салон",
+    en: "QR code for your salon",
+  },
+  "settings.bookingLink.qrHint": {
+    bg: "Клиентите сканират → отварят се на страницата за резервация",
+    en: "Clients scan → they land on the booking page",
+  },
+  "settings.bookingLink.print": { bg: "🖨️ Принтирай", en: "🖨️ Print" },
+  "settings.bookingLink.close": { bg: "Затвори", en: "Close" },
 } as const satisfies Record<string, LocalizedString>;
 
 export type TranslationKey = keyof typeof translations;
