@@ -5,11 +5,14 @@ import {
   barbers,
   services,
   todaysAppointments,
+  products,
   STATUS_COLOR_CLASSES,
   type Appointment,
   type Barber,
   type AppointmentStatus,
+  type ProductSale,
 } from "@/lib/mock-data";
+import { loadSales, saveSales } from "@/lib/sales-store";
 
 const START_HOUR = 0;
 const END_HOUR = 24;
@@ -76,6 +79,8 @@ export default function DashboardCalendarPage() {
   const [detailsModal, setDetailsModal] = useState<DetailsModal>(null);
   const [dragPreview, setDragPreview] = useState<DragPreview | null>(null);
   const [moveConfirm, setMoveConfirm] = useState<MoveConfirm | null>(null);
+  const [productSales, setProductSales] = useState<ProductSale[]>([]);
+  const [salesLoaded, setSalesLoaded] = useState(false);
 
   const dragRef = useRef<DragInfo | null>(null);
   const dragPreviewRef = useRef<DragPreview | null>(null);
@@ -88,6 +93,37 @@ export default function DashboardCalendarPage() {
     const id = setInterval(() => setNow(new Date()), 30_000);
     return () => clearInterval(id);
   }, []);
+
+  useEffect(() => {
+    setProductSales(loadSales());
+    setSalesLoaded(true);
+  }, []);
+
+  useEffect(() => {
+    if (!salesLoaded) return;
+    saveSales(productSales);
+  }, [productSales, salesLoaded]);
+
+  function handleSellProduct(appointmentId: string, productId: string) {
+    const product = products.find((p) => p.id === productId);
+    const appt = allAppointments.find((a) => a.id === appointmentId);
+    if (!product || !appt) return;
+    const effective = applyOverride(appt, overrides[appointmentId]);
+    const sale: ProductSale = {
+      id: `sale-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      productId,
+      appointmentId,
+      barberId: effective.barberId,
+      price: product.price,
+      commissionPct: product.commissionPct,
+      soldAt: new Date().toISOString(),
+    };
+    setProductSales((prev) => [...prev, sale]);
+  }
+
+  function handleRemoveSale(saleId: string) {
+    setProductSales((prev) => prev.filter((s) => s.id !== saleId));
+  }
 
   useEffect(() => {
     if (!containerRef.current || !now) return;
@@ -459,8 +495,15 @@ export default function DashboardCalendarPage() {
         <AppointmentDetailsModal
           appointment={detailsAppointment}
           now={isToday ? now : null}
+          sales={productSales.filter(
+            (s) => s.appointmentId === detailsAppointment.id
+          )}
           onClose={() => setDetailsModal(null)}
           onStatusChange={handleStatusChange}
+          onSellProduct={(productId) =>
+            handleSellProduct(detailsAppointment.id, productId)
+          }
+          onRemoveSale={handleRemoveSale}
         />
       )}
 
@@ -1046,13 +1089,19 @@ function NewAppointmentModal({
 function AppointmentDetailsModal({
   appointment,
   now,
+  sales,
   onClose,
   onStatusChange,
+  onSellProduct,
+  onRemoveSale,
 }: {
   appointment: Appointment;
   now: Date | null;
+  sales: ProductSale[];
   onClose: () => void;
   onStatusChange: (id: string, status: AppointmentStatus) => void;
+  onSellProduct: (productId: string) => void;
+  onRemoveSale: (saleId: string) => void;
 }) {
   const service = services.find((s) => s.id === appointment.serviceId)!;
   const barber = barbers.find((b) => b.id === appointment.barberId)!;
@@ -1173,6 +1222,12 @@ function AppointmentDetailsModal({
           })}
         </div>
       </div>
+      <ProductSaleSection
+        sales={sales}
+        onSell={onSellProduct}
+        onRemove={onRemoveSale}
+      />
+
       <div className="mt-6 flex justify-end">
         <button
           type="button"
@@ -1183,6 +1238,146 @@ function AppointmentDetailsModal({
         </button>
       </div>
     </ModalShell>
+  );
+}
+
+function ProductSaleSection({
+  sales,
+  onSell,
+  onRemove,
+}: {
+  sales: ProductSale[];
+  onSell: (productId: string) => void;
+  onRemove: (saleId: string) => void;
+}) {
+  const [query, setQuery] = useState("");
+  const [showDropdown, setShowDropdown] = useState(false);
+
+  const matches = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return [];
+    return products
+      .filter(
+        (p) =>
+          p.name.toLowerCase().includes(q) ||
+          p.brand.toLowerCase().includes(q) ||
+          p.category.toLowerCase().includes(q)
+      )
+      .slice(0, 6);
+  }, [query]);
+
+  const totalSales = sales.reduce((sum, s) => sum + s.price, 0);
+  const totalCommission = sales.reduce(
+    (sum, s) => sum + (s.price * s.commissionPct) / 100,
+    0
+  );
+
+  return (
+    <div className="mt-5">
+      <p className="text-xs uppercase tracking-widest text-bone-dim">
+        Продажба на продукт
+      </p>
+
+      <div className="relative mt-3">
+        <input
+          type="text"
+          value={query}
+          onChange={(e) => {
+            setQuery(e.target.value);
+            setShowDropdown(true);
+          }}
+          onFocus={() => setShowDropdown(true)}
+          onBlur={() => {
+            // Delay so click on dropdown registers first
+            setTimeout(() => setShowDropdown(false), 150);
+          }}
+          placeholder="Търси продукт (помада, восък, бранд...)"
+          className="input"
+        />
+        {showDropdown && matches.length > 0 && (
+          <ul className="absolute inset-x-0 top-full z-10 mt-1 max-h-64 overflow-y-auto rounded-xl border border-ink-muted bg-ink-soft shadow-2xl">
+            {matches.map((p) => (
+              <li key={p.id}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onSell(p.id);
+                    setQuery("");
+                  }}
+                  className="flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left transition hover:bg-accent/15"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium">{p.name}</p>
+                    <p className="text-[11px] text-bone-dim">
+                      {p.brand} · {p.category} · комисионна {p.commissionPct}%
+                    </p>
+                  </div>
+                  <span className="font-display text-accent">{p.price} лв</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+        {showDropdown && query.trim() && matches.length === 0 && (
+          <div className="absolute inset-x-0 top-full z-10 mt-1 rounded-xl border border-ink-muted bg-ink-soft p-3 text-sm text-bone-dim shadow-2xl">
+            Няма продукт, който отговаря на „{query}“
+          </div>
+        )}
+      </div>
+
+      {sales.length > 0 && (
+        <div className="mt-3">
+          <ul className="space-y-1.5">
+            {sales.map((sale) => {
+              const product = products.find((p) => p.id === sale.productId);
+              const commission = (sale.price * sale.commissionPct) / 100;
+              return (
+                <li
+                  key={sale.id}
+                  className="flex items-center justify-between gap-2 rounded-lg border border-ink-muted bg-ink/40 px-3 py-2"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate text-sm">
+                      {product?.name ?? "Изтрит продукт"}
+                    </p>
+                    <p className="text-[10px] text-bone-dim">
+                      +{commission.toFixed(2)} лв комисионна (
+                      {sale.commissionPct}%)
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="font-medium text-accent">
+                      {sale.price} лв
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => onRemove(sale.id)}
+                      className="text-bone-dim transition hover:text-rose-400"
+                      aria-label="Премахни продажба"
+                    >
+                      ✗
+                    </button>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+          <div className="mt-2 flex items-center justify-between rounded-lg bg-accent/10 px-3 py-2 text-sm">
+            <span className="text-bone-dim">
+              Общо продукти ({sales.length})
+            </span>
+            <span>
+              <span className="font-display text-base text-accent">
+                {totalSales.toFixed(2)} лв
+              </span>
+              <span className="ml-2 text-[11px] text-bone-dim">
+                комисионна {totalCommission.toFixed(2)} лв
+              </span>
+            </span>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 

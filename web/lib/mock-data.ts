@@ -38,6 +38,42 @@ export type Appointment = {
   durationMin?: number;
 };
 
+export type Product = {
+  id: string;
+  name: string;
+  brand: string;
+  category: string;
+  price: number;
+  commissionPct: number;
+};
+
+export type ProductSale = {
+  id: string;
+  productId: string;
+  appointmentId: string;
+  barberId: string;
+  price: number;
+  commissionPct: number;
+  soldAt: string;
+};
+
+export const products: Product[] = [
+  { id: "p-acrew-fc", name: "American Crew Forming Cream", brand: "American Crew", category: "Помада", price: 35, commissionPct: 10 },
+  { id: "p-reuzel-pink", name: "Reuzel Pink Pomade", brand: "Reuzel", category: "Помада", price: 42, commissionPct: 10 },
+  { id: "p-reuzel-grease", name: "Reuzel Grease (Heavy Hold)", brand: "Reuzel", category: "Помада", price: 44, commissionPct: 10 },
+  { id: "p-layrite-cement", name: "Layrite Cement Clay", brand: "Layrite", category: "Глина", price: 38, commissionPct: 12 },
+  { id: "p-beardbrand-oil", name: "Beardbrand Beard Oil — Tree Ranger", brand: "Beardbrand", category: "Масло за брада", price: 45, commissionPct: 15 },
+  { id: "p-proraso-as", name: "Proraso Sandalwood Aftershave", brand: "Proraso", category: "Афтършейв", price: 28, commissionPct: 10 },
+  { id: "p-proraso-cream", name: "Proraso Shaving Cream", brand: "Proraso", category: "Крем за бръснене", price: 22, commissionPct: 10 },
+  { id: "p-suavecito", name: "Suavecito Original Pomade", brand: "Suavecito", category: "Помада", price: 30, commissionPct: 10 },
+  { id: "p-hairgum", name: "Hairgum Old School Wax", brand: "Hairgum", category: "Восък", price: 25, commissionPct: 12 },
+  { id: "p-fawcett-wash", name: "Captain Fawcett Beard Wash", brand: "Captain Fawcett", category: "Шампоан за брада", price: 32, commissionPct: 15 },
+  { id: "p-murrays", name: "Murray's Superior Pomade", brand: "Murray's", category: "Помада", price: 22, commissionPct: 10 },
+  { id: "p-clubman-talc", name: "Pinaud Clubman Talc", brand: "Pinaud Clubman", category: "Пудра", price: 18, commissionPct: 10 },
+  { id: "p-blind-barber", name: "Blind Barber 90-Proof Pomade", brand: "Blind Barber", category: "Помада", price: 48, commissionPct: 12 },
+  { id: "p-uppercut", name: "Uppercut Deluxe Matt Pomade", brand: "Uppercut Deluxe", category: "Помада", price: 34, commissionPct: 10 },
+];
+
 export const services: Service[] = [
   {
     id: "svc-classic",
