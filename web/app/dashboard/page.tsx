@@ -13,6 +13,7 @@ import {
   type ProductSale,
 } from "@/lib/mock-data";
 import { loadSales, saveSales } from "@/lib/sales-store";
+import { useCalendar, isSameDay, startOfDay } from "@/lib/calendar-context";
 
 const START_HOUR = 0;
 const END_HOUR = 24;
@@ -63,7 +64,9 @@ function applyOverride(a: Appointment, ov?: AppointmentOverride): Appointment {
 }
 
 export default function DashboardCalendarPage() {
-  const [dayOffset, setDayOffset] = useState(0);
+  const { selectedDate, setSelectedDate } = useCalendar();
+  const today = useMemo(() => startOfDay(new Date()), []);
+  const isToday = isSameDay(selectedDate, today);
   const [selectedBarberId, setSelectedBarberId] = useState<string | "all">(
     "all"
   );
@@ -86,7 +89,7 @@ export default function DashboardCalendarPage() {
   const dragPreviewRef = useRef<DragPreview | null>(null);
   const justFinishedDragRef = useRef(false);
   const containerRef = useRef<HTMLDivElement>(null);
-  const lastScrolledRef = useRef<number | null>(null);
+  const lastScrolledRef = useRef<string | null>(null);
 
   useEffect(() => {
     setNow(new Date());
@@ -127,15 +130,16 @@ export default function DashboardCalendarPage() {
 
   useEffect(() => {
     if (!containerRef.current || !now) return;
-    if (lastScrolledRef.current === dayOffset) return;
-    const targetHour = dayOffset === 0 ? now.getHours() : 9;
+    const dayKey = selectedDate.toISOString().slice(0, 10);
+    if (lastScrolledRef.current === dayKey) return;
+    const targetHour = isToday ? now.getHours() : 9;
     const targetTop = (targetHour - START_HOUR) * HOUR_HEIGHT;
     containerRef.current.scrollTop = Math.max(
       0,
       targetTop - containerRef.current.clientHeight / 3
     );
-    lastScrolledRef.current = dayOffset;
-  }, [dayOffset, now]);
+    lastScrolledRef.current = dayKey;
+  }, [selectedDate, now, isToday]);
 
   function setOverride(id: string, ov: AppointmentOverride) {
     setOverrides((prev) => ({ ...prev, [id]: { ...prev[id], ...ov } }));
@@ -308,8 +312,7 @@ export default function DashboardCalendarPage() {
 
   function handleMoveConfirm() {
     if (!moveConfirm) return;
-    const newDate = new Date();
-    newDate.setDate(newDate.getDate() + dayOffset);
+    const newDate = new Date(selectedDate);
     newDate.setHours(
       Math.floor(moveConfirm.toStartMinutes / 60),
       moveConfirm.toStartMinutes % 60,
@@ -338,23 +341,22 @@ export default function DashboardCalendarPage() {
     setDetailsModal(null);
   }
 
-  const currentDate = useMemo(() => {
-    const d = new Date();
-    d.setDate(d.getDate() + dayOffset);
-    return d;
-  }, [dayOffset]);
-
   const visibleBarbers = useMemo(() => {
     if (selectedBarberId === "all") return barbers;
     return barbers.filter((b) => b.id === selectedBarberId);
   }, [selectedBarberId]);
 
-  const isToday = dayOffset === 0;
-  const dateLabel = currentDate.toLocaleDateString("bg-BG", {
+  const dateLabel = selectedDate.toLocaleDateString("bg-BG", {
     weekday: "long",
     day: "numeric",
     month: "long",
   });
+
+  function changeDay(delta: number) {
+    const next = new Date(selectedDate);
+    next.setDate(selectedDate.getDate() + delta);
+    setSelectedDate(startOfDay(next));
+  }
 
   const nowMinutesFromStart =
     now && isToday ? now.getHours() * 60 + now.getMinutes() : null;
@@ -376,13 +378,11 @@ export default function DashboardCalendarPage() {
   function getAppointmentsForBarber(
     barberId: string
   ): { appointment: Appointment; isDragging: boolean }[] {
-    if (!isToday) return [];
     const result: { appointment: Appointment; isDragging: boolean }[] = [];
     for (const a of allAppointments) {
       if (dragPreview && dragPreview.appointmentId === a.id) {
         if (dragPreview.barberId === barberId) {
-          const newDate = new Date();
-          newDate.setDate(newDate.getDate() + dayOffset);
+          const newDate = new Date(selectedDate);
           newDate.setHours(
             Math.floor(dragPreview.startMinutes / 60),
             dragPreview.startMinutes % 60,
@@ -402,9 +402,10 @@ export default function DashboardCalendarPage() {
         continue;
       }
       const effective = applyOverride(a, overrides[a.id]);
-      if (effective.barberId === barberId) {
-        result.push({ appointment: effective, isDragging: false });
-      }
+      if (effective.barberId !== barberId) continue;
+      const apptDate = new Date(effective.startsAt);
+      if (!isSameDay(apptDate, selectedDate)) continue;
+      result.push({ appointment: effective, isDragging: false });
     }
     return result;
   }
@@ -413,8 +414,10 @@ export default function DashboardCalendarPage() {
     <main className="flex h-full flex-col px-4 py-4 md:px-6">
       <Toolbar
         dateLabel={dateLabel}
-        dayOffset={dayOffset}
-        onDayChange={setDayOffset}
+        isToday={isToday}
+        onPrevDay={() => changeDay(-1)}
+        onNextDay={() => changeDay(1)}
+        onJumpToToday={() => setSelectedDate(today)}
         selectedBarberId={selectedBarberId}
         onBarberChange={setSelectedBarberId}
       />
@@ -452,8 +455,7 @@ export default function DashboardCalendarPage() {
                     : setHover({ barberId: barber.id, startMinutes })
                 }
                 onCreate={(startMinutes) => {
-                  const date = new Date();
-                  date.setDate(date.getDate() + dayOffset);
+                  const date = new Date(selectedDate);
                   date.setHours(
                     Math.floor(startMinutes / 60),
                     startMinutes % 60,
@@ -473,11 +475,6 @@ export default function DashboardCalendarPage() {
         </div>
       </div>
 
-      {!isToday && (
-        <p className="mt-3 shrink-0 text-center text-xs text-bone-dim">
-          Демо данни има само за днес. Превключи към „Днес“ за пълния график.
-        </p>
-      )}
 
       {newModal && (
         <NewAppointmentModal
@@ -524,14 +521,18 @@ export default function DashboardCalendarPage() {
 
 function Toolbar({
   dateLabel,
-  dayOffset,
-  onDayChange,
+  isToday,
+  onPrevDay,
+  onNextDay,
+  onJumpToToday,
   selectedBarberId,
   onBarberChange,
 }: {
   dateLabel: string;
-  dayOffset: number;
-  onDayChange: (n: number) => void;
+  isToday: boolean;
+  onPrevDay: () => void;
+  onNextDay: () => void;
+  onJumpToToday: () => void;
   selectedBarberId: string | "all";
   onBarberChange: (id: string | "all") => void;
 }) {
@@ -539,7 +540,7 @@ function Toolbar({
     <div className="flex shrink-0 flex-wrap items-center justify-between gap-3">
       <div className="flex items-center gap-2">
         <button
-          onClick={() => onDayChange(dayOffset - 1)}
+          onClick={onPrevDay}
           className="grid h-9 w-9 place-items-center rounded-lg border border-ink-muted text-bone-dim transition hover:border-accent hover:text-bone"
           aria-label="Предишен ден"
         >
@@ -549,15 +550,15 @@ function Toolbar({
           {dateLabel}
         </h1>
         <button
-          onClick={() => onDayChange(dayOffset + 1)}
+          onClick={onNextDay}
           className="grid h-9 w-9 place-items-center rounded-lg border border-ink-muted text-bone-dim transition hover:border-accent hover:text-bone"
           aria-label="Следващ ден"
         >
           →
         </button>
         <button
-          onClick={() => onDayChange(0)}
-          disabled={dayOffset === 0}
+          onClick={onJumpToToday}
+          disabled={isToday}
           className="ml-2 rounded-lg border border-ink-muted px-3 py-1.5 text-xs uppercase tracking-wider text-bone-dim transition hover:border-accent hover:text-bone disabled:cursor-not-allowed disabled:opacity-40"
         >
           Днес
@@ -1300,9 +1301,11 @@ function ProductSaleSection({
               <li key={p.id}>
                 <button
                   type="button"
-                  onClick={() => {
+                  onMouseDown={(e) => {
+                    e.preventDefault();
                     onSell(p.id);
                     setQuery("");
+                    setShowDropdown(false);
                   }}
                   className="flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left transition hover:bg-accent/15"
                 >

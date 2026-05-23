@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useMemo, useState } from "react";
+import { useCalendar, isSameDay, startOfDay } from "@/lib/calendar-context";
 
 type Item = {
   href: string;
@@ -23,54 +25,207 @@ const items: Item[] = [
 ];
 
 export function Sidebar() {
-  const pathname = usePathname();
   return (
-    <aside className="sticky top-0 hidden h-screen w-56 shrink-0 flex-col border-r border-ink-muted/40 bg-ink-soft md:flex">
-      <div className="flex items-center gap-2 px-5 py-5">
-        <span className="grid h-8 w-8 place-items-center rounded-full bg-accent font-display text-lg font-bold text-ink">
-          B
-        </span>
-        <span className="font-display text-lg tracking-wide">BarberOS</span>
+    <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r border-ink-muted/40 bg-ink-soft md:flex">
+      <BusinessHeader />
+      <MiniCalendar />
+      <Nav />
+      <Footer />
+    </aside>
+  );
+}
+
+function BusinessHeader() {
+  return (
+    <div className="flex items-center gap-3 border-b border-ink-muted/30 px-4 py-4">
+      <button
+        type="button"
+        title="Качи лого"
+        className="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-accent text-ink font-display text-xl font-bold transition hover:bg-accent-hover"
+      >
+        B
+      </button>
+      <div className="min-w-0">
+        <p className="truncate font-display text-base leading-tight">
+          My Barbershop
+        </p>
+        <p className="truncate text-[10px] uppercase tracking-widest text-bone-dim">
+          Демо акаунт
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function MiniCalendar() {
+  const { selectedDate, setSelectedDate } = useCalendar();
+  const today = useMemo(() => startOfDay(new Date()), []);
+
+  const [viewMonth, setViewMonth] = useState<Date>(() => {
+    const d = new Date(selectedDate);
+    d.setDate(1);
+    d.setHours(0, 0, 0, 0);
+    return d;
+  });
+
+  const monthLabel = viewMonth.toLocaleDateString("bg-BG", {
+    month: "long",
+    year: "numeric",
+  });
+
+  // Build 6-week grid (Monday-first)
+  const days = useMemo(() => {
+    const firstOfMonth = new Date(viewMonth);
+    const weekday = firstOfMonth.getDay(); // 0=Sun..6=Sat
+    const startOffset = (weekday + 6) % 7; // Monday-first
+    const gridStart = new Date(firstOfMonth);
+    gridStart.setDate(firstOfMonth.getDate() - startOffset);
+
+    const arr: Date[] = [];
+    for (let i = 0; i < 42; i++) {
+      const d = new Date(gridStart);
+      d.setDate(gridStart.getDate() + i);
+      arr.push(d);
+    }
+    return arr;
+  }, [viewMonth]);
+
+  function goToPrevMonth() {
+    const d = new Date(viewMonth);
+    d.setMonth(viewMonth.getMonth() - 1);
+    setViewMonth(d);
+  }
+
+  function goToNextMonth() {
+    const d = new Date(viewMonth);
+    d.setMonth(viewMonth.getMonth() + 1);
+    setViewMonth(d);
+  }
+
+  function goToToday() {
+    const d = new Date(today);
+    d.setDate(1);
+    setViewMonth(d);
+    setSelectedDate(today);
+  }
+
+  return (
+    <div className="border-b border-ink-muted/30 px-3 py-3">
+      <div className="mb-2 flex items-center justify-between px-1">
+        <button
+          type="button"
+          onClick={goToPrevMonth}
+          className="grid h-6 w-6 place-items-center rounded text-bone-dim transition hover:bg-ink-muted/40 hover:text-bone"
+          aria-label="Предходен месец"
+        >
+          ‹
+        </button>
+        <button
+          type="button"
+          onClick={goToToday}
+          className="text-xs font-medium capitalize text-bone transition hover:text-accent"
+          title="Към днешен ден"
+        >
+          {monthLabel}
+        </button>
+        <button
+          type="button"
+          onClick={goToNextMonth}
+          className="grid h-6 w-6 place-items-center rounded text-bone-dim transition hover:bg-ink-muted/40 hover:text-bone"
+          aria-label="Следващ месец"
+        >
+          ›
+        </button>
       </div>
 
-      <nav className="flex-1 space-y-1 px-3">
-        {items.map((item) => {
-          const isActive =
-            pathname === item.href ||
-            (item.href !== "/dashboard" && pathname.startsWith(item.href));
+      <div className="grid grid-cols-7 gap-0.5">
+        {["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Нд"].map((d) => (
+          <span
+            key={d}
+            className="py-1 text-center text-[9px] uppercase tracking-wider text-bone-dim/70"
+          >
+            {d}
+          </span>
+        ))}
+        {days.map((d) => {
+          const isCurrentMonth = d.getMonth() === viewMonth.getMonth();
+          const isToday = isSameDay(d, today);
+          const isSelected = isSameDay(d, selectedDate);
+
+          const baseClasses =
+            "relative grid aspect-square place-items-center rounded text-xs transition";
+          const textColor = !isCurrentMonth
+            ? "text-bone-dim/30"
+            : isToday
+              ? "text-red-400 font-bold"
+              : "text-bone";
+          const selection = isSelected
+            ? "ring-2 ring-accent"
+            : "hover:bg-ink-muted/40";
+
           return (
-            <Link
-              key={item.href}
-              href={item.soon ? "#" : item.href}
-              onClick={(e) => item.soon && e.preventDefault()}
-              className={`group flex items-center justify-between rounded-xl px-3 py-2 text-sm transition ${
-                isActive
-                  ? "bg-accent/15 text-bone"
-                  : "text-bone-dim hover:bg-ink-muted/40 hover:text-bone"
-              } ${item.soon ? "cursor-not-allowed opacity-60" : ""}`}
+            <button
+              key={d.toISOString()}
+              type="button"
+              onClick={() => setSelectedDate(startOfDay(d))}
+              className={`${baseClasses} ${textColor} ${selection}`}
             >
-              <span className="flex items-center gap-3">
-                <span className="text-base">{item.icon}</span>
-                <span>{item.label}</span>
-              </span>
-              {item.badge && (
-                <span className="rounded-full bg-accent px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-ink">
-                  {item.badge}
-                </span>
+              <span>{d.getDate()}</span>
+              {isToday && (
+                <span className="absolute bottom-0.5 h-0.5 w-0.5 rounded-full bg-red-500" />
               )}
-              {item.soon && !item.badge && (
-                <span className="text-[10px] uppercase tracking-wider text-bone-dim/60">
-                  скоро
-                </span>
-              )}
-            </Link>
+            </button>
           );
         })}
-      </nav>
-
-      <div className="border-t border-ink-muted/40 px-5 py-4 text-xs text-bone-dim">
-        Демо режим — данните са фалшиви
       </div>
-    </aside>
+    </div>
+  );
+}
+
+function Nav() {
+  const pathname = usePathname();
+  return (
+    <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-2">
+      {items.map((item) => {
+        const isActive =
+          pathname === item.href ||
+          (item.href !== "/dashboard" && pathname.startsWith(item.href));
+        return (
+          <Link
+            key={item.href}
+            href={item.soon ? "#" : item.href}
+            onClick={(e) => item.soon && e.preventDefault()}
+            className={`group flex items-center justify-between rounded-xl px-3 py-2 text-sm transition ${
+              isActive
+                ? "bg-accent/15 text-bone"
+                : "text-bone-dim hover:bg-ink-muted/40 hover:text-bone"
+            } ${item.soon ? "cursor-not-allowed opacity-60" : ""}`}
+          >
+            <span className="flex items-center gap-3">
+              <span className="text-base">{item.icon}</span>
+              <span>{item.label}</span>
+            </span>
+            {item.badge && (
+              <span className="rounded-full bg-accent px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-ink">
+                {item.badge}
+              </span>
+            )}
+            {item.soon && !item.badge && (
+              <span className="text-[10px] uppercase tracking-wider text-bone-dim/60">
+                скоро
+              </span>
+            )}
+          </Link>
+        );
+      })}
+    </nav>
+  );
+}
+
+function Footer() {
+  return (
+    <div className="border-t border-ink-muted/40 px-4 py-3 text-[11px] text-bone-dim">
+      Демо режим — данните са локални
+    </div>
   );
 }
