@@ -12,6 +12,16 @@ export type Location = {
   address: string;
 };
 
+export type Client = {
+  id: string;
+  firstName: string;
+  lastName: string;
+  phone: string;
+  email?: string;
+  notes?: string;
+  createdAt: string;
+};
+
 export type Barber = {
   id: string;
   name: string;

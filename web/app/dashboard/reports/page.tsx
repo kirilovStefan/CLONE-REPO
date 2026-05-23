@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import {
   services,
-  barbers,
   todaysAppointments,
   locations,
   type ProductSale,
@@ -30,7 +29,7 @@ function generateLast14Days() {
 }
 
 export default function ReportsPage() {
-  const { currentLocationId, viewAs, products } = useCalendar();
+  const { currentLocationId, viewAs, products, barbers } = useCalendar();
   const { t, localeTag } = useT();
   const [sales, setSales] = useState<ProductSale[]>([]);
   const isBarberView = viewAs !== "owner";

@@ -6,6 +6,7 @@ const config: Config = {
     "./components/**/*.{js,ts,jsx,tsx,mdx}",
     "./lib/**/*.{js,ts,jsx,tsx}",
   ],
+  darkMode: "class",
   safelist: [
     "bg-emerald-500/40",
     "border-l-emerald-300",
@@ -32,17 +33,17 @@ const config: Config = {
     extend: {
       colors: {
         ink: {
-          DEFAULT: "#0b0b0d",
-          soft: "#16161a",
-          muted: "#2a2a30",
+          DEFAULT: "rgb(var(--ink) / <alpha-value>)",
+          soft: "rgb(var(--ink-soft) / <alpha-value>)",
+          muted: "rgb(var(--ink-muted) / <alpha-value>)",
         },
         bone: {
-          DEFAULT: "#f5efe6",
-          dim: "#cfc6b8",
+          DEFAULT: "rgb(var(--bone) / <alpha-value>)",
+          dim: "rgb(var(--bone-dim) / <alpha-value>)",
         },
         accent: {
-          DEFAULT: "#c9a36a",
-          hover: "#b88c4f",
+          DEFAULT: "rgb(var(--accent) / <alpha-value>)",
+          hover: "rgb(var(--accent-hover) / <alpha-value>)",
         },
       },
       fontFamily: {

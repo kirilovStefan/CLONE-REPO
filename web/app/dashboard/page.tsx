@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  barbers,
   services,
   todaysAppointments,
   STATUS_COLOR_CLASSES,
@@ -86,6 +85,7 @@ export default function DashboardCalendarPage() {
     products,
     decrementProductStock,
     incrementProductStock,
+    barbers,
   } = useCalendar();
   const today = useMemo(() => startOfDay(new Date()), []);
   const isToday = isSameDay(selectedDate, today);
@@ -606,6 +606,7 @@ function Toolbar({
   onRequestTimeOff: () => void;
 }) {
   const { t } = useT();
+  const { barbers } = useCalendar();
   const locationBarbers = barbers.filter(
     (b) => b.locationId === currentLocationId
   );
@@ -1092,6 +1093,7 @@ function NewAppointmentModal({
   onSave: (a: Appointment) => void;
 }) {
   const { t, localeTag } = useT();
+  const { barbers } = useCalendar();
   const barber = barbers.find((b) => b.id === barberId);
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -1269,6 +1271,7 @@ function AppointmentDetailsModal({
   onRemoveSale: (saleId: string) => void;
 }) {
   const { t, localeTag } = useT();
+  const { barbers } = useCalendar();
   const service = services.find((s) => s.id === appointment.serviceId)!;
   const barber = barbers.find((b) => b.id === appointment.barberId)!;
   const durationMin = appointment.durationMin ?? service.durationMin;
@@ -1616,6 +1619,7 @@ function TimeOffRequestModal({
   }) => void;
 }) {
   const { t } = useT();
+  const { barbers } = useCalendar();
   const barber = barbers.find((b) => b.id === barberId);
   const [startDate, setStartDate] = useState(defaultStartDate);
   const [endDate, setEndDate] = useState(defaultStartDate);
@@ -1733,6 +1737,7 @@ function MoveConfirmModal({
   onCancel: () => void;
 }) {
   const { t } = useT();
+  const { barbers } = useCalendar();
   const fromBarber = barbers.find((b) => b.id === info.fromBarberId);
   const toBarber = barbers.find((b) => b.id === info.toBarberId);
   const fromTime = formatMinutesToTime(info.fromStartMinutes);

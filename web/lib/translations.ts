@@ -455,6 +455,181 @@ export const translations = {
     bg: "Остават {count} бр.",
     en: "{count} units left",
   },
+
+  // Clients page
+  "clients.title": { bg: "Клиенти", en: "Clients" },
+  "clients.subtitle": {
+    bg: "База с клиенти, история и бързи контакти",
+    en: "Client database, history and quick contact",
+  },
+  "clients.count": { bg: "{count} клиента", en: "{count} clients" },
+  "clients.addButton": { bg: "+ Нов клиент", en: "+ New client" },
+  "clients.searchPlaceholder": {
+    bg: "Търси по име, телефон или имейл…",
+    en: "Search by name, phone or email…",
+  },
+  "clients.empty": {
+    bg: "Все още няма клиенти. Добави първия си клиент.",
+    en: "No clients yet. Add your first one.",
+  },
+  "clients.noMatch": {
+    bg: "Няма клиенти, отговарящи на търсенето.",
+    en: "No clients match your search.",
+  },
+  "clients.visitsCount": { bg: "{count} посещения", en: "{count} visits" },
+  "clients.singleVisit": { bg: "{count} посещение", en: "{count} visit" },
+  "clients.totalSpent": { bg: "{amount} {currency}", en: "{amount} {currency}" },
+  "clients.lastVisit": { bg: "Последно: {date}", en: "Last: {date}" },
+  "clients.noVisits": { bg: "Без посещения", en: "No visits yet" },
+  "clients.favoriteBarber": {
+    bg: "Предпочитан: {name}",
+    en: "Favorite: {name}",
+  },
+  "clients.action.call": { bg: "Обади се", en: "Call" },
+  "clients.action.sms": { bg: "SMS", en: "SMS" },
+  "clients.action.email": { bg: "Имейл", en: "Email" },
+  "clients.action.viber": { bg: "Viber", en: "Viber" },
+  "clients.action.whatsapp": { bg: "WhatsApp", en: "WhatsApp" },
+  "clients.action.edit": { bg: "Редактирай", en: "Edit" },
+  "clients.action.delete": { bg: "Изтрий", en: "Delete" },
+  "clients.deleteConfirm": {
+    bg: 'Изтриване на клиент "{name}"?',
+    en: 'Delete client "{name}"?',
+  },
+  "clients.barberOnlyWarning": {
+    bg: "Бръснарите не могат да виждат клиентския списък.",
+    en: "Barbers cannot view the client list.",
+  },
+
+  // Client form
+  "clientForm.titleNew": { bg: "Нов клиент", en: "New client" },
+  "clientForm.titleEdit": { bg: "Редактирай клиент", en: "Edit client" },
+  "clientForm.firstName": { bg: "Име *", en: "First name *" },
+  "clientForm.lastName": { bg: "Фамилия", en: "Last name" },
+  "clientForm.phone": { bg: "Телефон *", en: "Phone *" },
+  "clientForm.email": { bg: "Имейл", en: "Email" },
+  "clientForm.notes": { bg: "Бележки", en: "Notes" },
+  "clientForm.notesPlaceholder": {
+    bg: "напр. алергия, любим стил, рожден ден…",
+    en: "e.g. allergies, favorite style, birthday…",
+  },
+  "clientForm.cancel": { bg: "Отказ", en: "Cancel" },
+  "clientForm.save": { bg: "💾 Запази", en: "💾 Save" },
+
+  // Team page
+  "team.title": { bg: "Екип", en: "Team" },
+  "team.subtitle": {
+    bg: "Управление на бръснарите, работно време и специалности",
+    en: "Manage barbers, working hours and specialties",
+  },
+  "team.count": { bg: "{count} бръснари", en: "{count} barbers" },
+  "team.addButton": { bg: "+ Нов бръснар", en: "+ New barber" },
+  "team.searchPlaceholder": {
+    bg: "Търси по име или специалност…",
+    en: "Search by name or specialty…",
+  },
+  "team.empty": {
+    bg: "Все още няма добавени бръснари.",
+    en: "No barbers added yet.",
+  },
+  "team.noMatch": {
+    bg: "Няма бръснари, отговарящи на търсенето.",
+    en: "No barbers match your search.",
+  },
+  "team.workHours": { bg: "Работно време", en: "Working hours" },
+  "team.location": { bg: "Локация", en: "Location" },
+  "team.specialties": { bg: "Специалности", en: "Specialties" },
+  "team.rating": { bg: "Рейтинг", en: "Rating" },
+  "team.reviews": { bg: "{count} ревюта", en: "{count} reviews" },
+  "team.deleteConfirm": {
+    bg: 'Премахване на "{name}" от екипа?',
+    en: 'Remove "{name}" from the team?',
+  },
+
+  // Team form
+  "teamForm.titleNew": { bg: "Нов бръснар", en: "New barber" },
+  "teamForm.titleEdit": { bg: "Редактирай бръснар", en: "Edit barber" },
+  "teamForm.name": { bg: "Име и фамилия *", en: "Full name *" },
+  "teamForm.namePlaceholder": { bg: "напр. Иван Петров", en: "e.g. John Smith" },
+  "teamForm.titleField": { bg: "Длъжност", en: "Title" },
+  "teamForm.titleFieldPlaceholder": {
+    bg: "напр. Senior Barber",
+    en: "e.g. Senior Barber",
+  },
+  "teamForm.location": { bg: "Локация *", en: "Location *" },
+  "teamForm.workStart": { bg: "Начало (час) *", en: "Start (hour) *" },
+  "teamForm.workEnd": { bg: "Край (час) *", en: "End (hour) *" },
+  "teamForm.specialties": {
+    bg: "Специалности (разделени със запетая)",
+    en: "Specialties (comma-separated)",
+  },
+  "teamForm.specialtiesPlaceholder": {
+    bg: "напр. Fade, Брада, Класика",
+    en: "e.g. Fade, Beard, Classic",
+  },
+  "teamForm.cancel": { bg: "Отказ", en: "Cancel" },
+  "teamForm.save": { bg: "💾 Запази", en: "💾 Save" },
+
+  // Settings page
+  "settings.title": { bg: "Настройки", en: "Settings" },
+  "settings.subtitle": {
+    bg: "Персонализирай BarberOS според своите предпочитания",
+    en: "Customize BarberOS to your preferences",
+  },
+  "settings.theme.title": { bg: "🌗 Тема", en: "🌗 Theme" },
+  "settings.theme.subtitle": {
+    bg: "Тъмна, светла или автоматично според устройството",
+    en: "Dark, light, or automatic based on your device",
+  },
+  "settings.theme.light": { bg: "Светла", en: "Light" },
+  "settings.theme.dark": { bg: "Тъмна", en: "Dark" },
+  "settings.theme.system": { bg: "Системна", en: "System" },
+  "settings.account.title": { bg: "🏢 Профил на бизнеса", en: "🏢 Business profile" },
+  "settings.account.subtitle": {
+    bg: "Име и контактна информация на салона",
+    en: "Salon name and contact details",
+  },
+  "settings.account.businessName": {
+    bg: "Име на бизнеса",
+    en: "Business name",
+  },
+  "settings.account.email": { bg: "Имейл за връзка", en: "Contact email" },
+  "settings.account.phone": { bg: "Телефон", en: "Phone" },
+  "settings.account.saveSoon": {
+    bg: "Скоро ще можеш да запазваш промените",
+    en: "Coming soon: ability to save changes",
+  },
+  "settings.notifications.title": {
+    bg: "🔔 Известия",
+    en: "🔔 Notifications",
+  },
+  "settings.notifications.subtitle": {
+    bg: "Email и SMS известия за теб и клиентите",
+    en: "Email and SMS notifications for you and clients",
+  },
+  "settings.subscription.title": {
+    bg: "💳 Абонамент",
+    en: "💳 Subscription",
+  },
+  "settings.subscription.subtitle": {
+    bg: "Платежни данни и план",
+    en: "Billing details and plan",
+  },
+  "settings.danger.title": { bg: "⚠️ Опасна зона", en: "⚠️ Danger zone" },
+  "settings.danger.logout": { bg: "Изход от акаунта", en: "Sign out" },
+  "settings.danger.resetDemo": {
+    bg: "Изчисти демо данните",
+    en: "Clear demo data",
+  },
+  "settings.danger.resetConfirm": {
+    bg: "Сигурен ли си, че искаш да изтриеш всички локални данни? Действието не може да се отмени.",
+    en: "Are you sure you want to clear all local data? This cannot be undone.",
+  },
+  "settings.danger.resetDone": {
+    bg: "Демо данните са изчистени.",
+    en: "Demo data has been cleared.",
+  },
+  "settings.placeholder.soon": { bg: "Скоро", en: "Coming soon" },
 } as const satisfies Record<string, LocalizedString>;
 
 export type TranslationKey = keyof typeof translations;

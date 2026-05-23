@@ -2,6 +2,27 @@
 @tailwind components;
 @tailwind utilities;
 
+:root,
+.dark {
+  --ink: 11 11 13;
+  --ink-soft: 22 22 26;
+  --ink-muted: 42 42 48;
+  --bone: 245 239 230;
+  --bone-dim: 207 198 184;
+  --accent: 201 163 106;
+  --accent-hover: 184 140 79;
+}
+
+.light {
+  --ink: 250 246 240;
+  --ink-soft: 255 255 255;
+  --ink-muted: 215 207 195;
+  --bone: 21 19 16;
+  --bone-dim: 95 88 80;
+  --accent: 161 121 64;
+  --accent-hover: 138 100 50;
+}
+
 :root {
   --font-display: "Playfair Display", Georgia, serif;
   --font-sans: "Inter", system-ui, sans-serif;
@@ -9,13 +30,13 @@
 
 html,
 body {
-  background-color: #0b0b0d;
-  color: #f5efe6;
+  background-color: rgb(var(--ink) / 1);
+  color: rgb(var(--bone) / 1);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
 ::selection {
-  background: #c9a36a;
-  color: #0b0b0d;
+  background: rgb(var(--accent) / 1);
+  color: rgb(var(--ink) / 1);
 }

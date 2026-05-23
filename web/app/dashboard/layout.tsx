@@ -5,25 +5,24 @@ import { useState, type ReactNode } from "react";
 import { Sidebar } from "./Sidebar";
 import { CalendarProvider, useCalendar } from "@/lib/calendar-context";
 import { I18nProvider, useT, type Locale } from "@/lib/i18n";
-import {
-  barbers,
-  TIME_OFF_REASON_LABEL,
-  type TimeOffRequest,
-} from "@/lib/mock-data";
+import { ThemeProvider } from "@/lib/theme-context";
+import { type TimeOffRequest } from "@/lib/mock-data";
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   return (
-    <I18nProvider>
-      <CalendarProvider>
-        <div className="flex h-screen overflow-hidden bg-ink">
-          <Sidebar />
-          <div className="flex min-w-0 flex-1 flex-col">
-            <TopBar />
-            <div className="flex-1 overflow-hidden">{children}</div>
+    <ThemeProvider>
+      <I18nProvider>
+        <CalendarProvider>
+          <div className="flex h-screen overflow-hidden bg-ink">
+            <Sidebar />
+            <div className="flex min-w-0 flex-1 flex-col">
+              <TopBar />
+              <div className="flex-1 overflow-hidden">{children}</div>
+            </div>
           </div>
-        </div>
-      </CalendarProvider>
-    </I18nProvider>
+        </CalendarProvider>
+      </I18nProvider>
+    </ThemeProvider>
   );
 }
 
@@ -195,6 +194,7 @@ function TimeOffRow({
   onCancel: () => void;
 }) {
   const { t, localeTag } = useT();
+  const { barbers } = useCalendar();
   const barber = barbers.find((b) => b.id === request.barberId);
   const initials = barber
     ? barber.name
@@ -295,7 +295,7 @@ function TimeOffRow({
 }
 
 function ViewAsSelector() {
-  const { viewAs, setViewAs, currentLocationId } = useCalendar();
+  const { viewAs, setViewAs, currentLocationId, barbers } = useCalendar();
   const { t } = useT();
   const [open, setOpen] = useState(false);
   const [passwordPrompt, setPasswordPrompt] = useState(false);
@@ -506,7 +506,7 @@ function OwnerPasswordModal({
 }
 
 function UserAvatar() {
-  const { viewAs } = useCalendar();
+  const { viewAs, barbers } = useCalendar();
   const { t } = useT();
   const isOwner = viewAs === "owner";
   const barber = isOwner ? null : barbers.find((b) => b.id === viewAs);

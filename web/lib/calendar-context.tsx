@@ -8,14 +8,24 @@ import {
   type ReactNode,
 } from "react";
 import {
+  barbers as seedBarbers,
   locations,
   products as seedProducts,
+  todaysAppointments,
+  type Barber,
+  type Client,
   type Product,
   type TimeOffReason,
   type TimeOffRequest,
 } from "./mock-data";
 import { loadTimeOff, saveTimeOff } from "./time-off-store";
 import { loadInventory, saveInventory } from "./inventory-store";
+import {
+  loadClients,
+  saveClients,
+  seedClientsFromAppointments,
+} from "./clients-store";
+import { loadTeam, saveTeam } from "./team-store";
 
 export type ViewAs = "owner" | string;
 
@@ -45,6 +55,14 @@ type CalendarContextValue = {
   removeProduct: (id: string) => void;
   decrementProductStock: (id: string, by?: number) => boolean;
   incrementProductStock: (id: string, by?: number) => void;
+  clients: Client[];
+  addClient: (input: Omit<Client, "id" | "createdAt">) => Client;
+  updateClient: (id: string, patch: Partial<Omit<Client, "id" | "createdAt">>) => void;
+  removeClient: (id: string) => void;
+  barbers: Barber[];
+  addBarber: (input: Omit<Barber, "id">) => Barber;
+  updateBarber: (id: string, patch: Partial<Omit<Barber, "id">>) => void;
+  removeBarber: (id: string) => void;
 };
 
 const CalendarContext = createContext<CalendarContextValue | null>(null);
@@ -63,6 +81,10 @@ export function CalendarProvider({ children }: { children: ReactNode }) {
   const [timeOffLoaded, setTimeOffLoaded] = useState(false);
   const [products, setProducts] = useState<Product[]>(seedProducts);
   const [productsLoaded, setProductsLoaded] = useState(false);
+  const [clients, setClients] = useState<Client[]>([]);
+  const [clientsLoaded, setClientsLoaded] = useState(false);
+  const [barbers, setBarbers] = useState<Barber[]>(seedBarbers);
+  const [barbersLoaded, setBarbersLoaded] = useState(false);
 
   useEffect(() => {
     setTimeOffRequests(loadTimeOff());
@@ -118,6 +140,70 @@ export function CalendarProvider({ children }: { children: ReactNode }) {
     setProducts((prev) =>
       prev.map((p) => (p.id === id ? { ...p, stockQty: p.stockQty + by } : p))
     );
+  }
+
+  useEffect(() => {
+    const stored = loadClients();
+    if (stored && stored.length > 0) {
+      setClients(stored);
+    } else {
+      setClients(seedClientsFromAppointments(todaysAppointments));
+    }
+    setClientsLoaded(true);
+  }, []);
+
+  useEffect(() => {
+    if (!clientsLoaded) return;
+    saveClients(clients);
+  }, [clients, clientsLoaded]);
+
+  function addClient(input: Omit<Client, "id" | "createdAt">): Client {
+    const client: Client = {
+      ...input,
+      id: `c-local-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      createdAt: new Date().toISOString(),
+    };
+    setClients((prev) => [...prev, client]);
+    return client;
+  }
+
+  function updateClient(
+    id: string,
+    patch: Partial<Omit<Client, "id" | "createdAt">>
+  ) {
+    setClients((prev) => prev.map((c) => (c.id === id ? { ...c, ...patch } : c)));
+  }
+
+  function removeClient(id: string) {
+    setClients((prev) => prev.filter((c) => c.id !== id));
+  }
+
+  useEffect(() => {
+    const stored = loadTeam();
+    if (stored && stored.length > 0) setBarbers(stored);
+    setBarbersLoaded(true);
+  }, []);
+
+  useEffect(() => {
+    if (!barbersLoaded) return;
+    saveTeam(barbers);
+  }, [barbers, barbersLoaded]);
+
+  function addBarber(input: Omit<Barber, "id">): Barber {
+    const barber: Barber = {
+      ...input,
+      id: `br-local-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+    };
+    setBarbers((prev) => [...prev, barber]);
+    return barber;
+  }
+
+  function updateBarber(id: string, patch: Partial<Omit<Barber, "id">>) {
+    setBarbers((prev) => prev.map((b) => (b.id === id ? { ...b, ...patch } : b)));
+  }
+
+  function removeBarber(id: string) {
+    setBarbers((prev) => prev.filter((b) => b.id !== id));
   }
 
   function setCurrentLocationId(id: string) {
@@ -179,6 +265,14 @@ export function CalendarProvider({ children }: { children: ReactNode }) {
         removeProduct,
         decrementProductStock,
         incrementProductStock,
+        clients,
+        addClient,
+        updateClient,
+        removeClient,
+        barbers,
+        addBarber,
+        updateBarber,
+        removeBarber,
       }}
     >
       {children}

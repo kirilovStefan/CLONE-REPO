@@ -19,18 +19,12 @@ type Item = {
 const items: Item[] = [
   { href: "/dashboard", labelKey: "nav.calendar", icon: "📅" },
   { href: "/dashboard/reports", labelKey: "nav.reports", icon: "📊" },
-  { href: "/dashboard/clients", labelKey: "nav.clients", icon: "👥", soon: true },
-  {
-    href: "/dashboard/team",
-    labelKey: "nav.team",
-    icon: "✂️",
-    soon: true,
-    badgeKey: "nav.new",
-  },
+  { href: "/dashboard/clients", labelKey: "nav.clients", icon: "👥" },
+  { href: "/dashboard/team", labelKey: "nav.team", icon: "✂️" },
   { href: "/dashboard/services", labelKey: "nav.services", icon: "🧾", soon: true },
   { href: "/dashboard/finance", labelKey: "nav.finance", icon: "💰", soon: true },
   { href: "/dashboard/inventory", labelKey: "nav.inventory", icon: "📦" },
-  { href: "/dashboard/settings", labelKey: "nav.settings", icon: "⚙️", soon: true },
+  { href: "/dashboard/settings", labelKey: "nav.settings", icon: "⚙️" },
 ];
 
 export function Sidebar() {
