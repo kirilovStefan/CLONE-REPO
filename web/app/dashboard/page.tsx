@@ -11,7 +11,7 @@ import {
   type AppointmentStatus,
 } from "@/lib/mock-data";
 
-// 24-часов график; видими 10 часа едновременно (скрол за останалите)
+// 24-часов график; видимата височина се определя от родителя (flex-1)
 const START_HOUR = 0;
 const END_HOUR = 24;
 const ROW_HEIGHT = 32; // 30-минутен слот
@@ -19,12 +19,11 @@ const SLOTS_PER_HOUR = 2;
 const HOUR_HEIGHT = ROW_HEIGHT * SLOTS_PER_HOUR; // 64 px
 const TOTAL_HEIGHT = (END_HOUR - START_HOUR) * HOUR_HEIGHT;
 const HEADER_HEIGHT = 56;
-const VISIBLE_HOURS = 10;
-const VISIBLE_HEIGHT = VISIBLE_HOURS * HOUR_HEIGHT;
 const TIME_AXIS_WIDTH = 64;
 
 type HoverState = { barberId: string; startMinutes: number } | null;
-type ModalState = { barberId: string; startsAt: string } | null;
+type NewModal = { barberId: string; startsAt: string } | null;
+type DetailsModal = { appointmentId: string } | null;
 
 export default function DashboardCalendarPage() {
   const [dayOffset, setDayOffset] = useState(0);
@@ -35,8 +34,12 @@ export default function DashboardCalendarPage() {
   const [customAppointments, setCustomAppointments] = useState<Appointment[]>(
     []
   );
+  const [statusOverrides, setStatusOverrides] = useState<
+    Record<string, AppointmentStatus>
+  >({});
   const [hover, setHover] = useState<HoverState>(null);
-  const [modal, setModal] = useState<ModalState>(null);
+  const [newModal, setNewModal] = useState<NewModal>(null);
+  const [detailsModal, setDetailsModal] = useState<DetailsModal>(null);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const lastScrolledRef = useRef<number | null>(null);
@@ -47,7 +50,7 @@ export default function DashboardCalendarPage() {
     return () => clearInterval(id);
   }, []);
 
-  // Авто-скрол до текущия час при отваряне (или при смяна на ден)
+  // Авто-скрол при отваряне и при смяна на ден — само вътре в графика
   useEffect(() => {
     if (!containerRef.current || !now) return;
     if (lastScrolledRef.current === dayOffset) return;
@@ -71,18 +74,17 @@ export default function DashboardCalendarPage() {
     return barbers.filter((b) => b.id === selectedBarberId);
   }, [selectedBarberId]);
 
+  const allAppointments = useMemo(
+    () => [...todaysAppointments, ...customAppointments],
+    [customAppointments]
+  );
+
+  const isToday = dayOffset === 0;
   const dateLabel = currentDate.toLocaleDateString("bg-BG", {
     weekday: "long",
     day: "numeric",
     month: "long",
   });
-
-  const isToday = dayOffset === 0;
-
-  const allAppointments = useMemo(
-    () => [...todaysAppointments, ...customAppointments],
-    [customAppointments]
-  );
 
   const nowMinutesFromStart =
     now && isToday ? now.getHours() * 60 + now.getMinutes() : null;
@@ -94,8 +96,20 @@ export default function DashboardCalendarPage() {
     ? now.toLocaleTimeString("bg-BG", { hour: "2-digit", minute: "2-digit" })
     : "";
 
+  const detailsAppointment = detailsModal
+    ? allAppointments.find((a) => a.id === detailsModal.appointmentId) ?? null
+    : null;
+
+  function handleStatusChange(
+    appointmentId: string,
+    newStatus: AppointmentStatus
+  ) {
+    setStatusOverrides((prev) => ({ ...prev, [appointmentId]: newStatus }));
+    setDetailsModal(null);
+  }
+
   return (
-    <main className="px-4 py-4 md:px-6">
+    <main className="flex h-full flex-col px-4 py-4 md:px-6">
       <Toolbar
         dateLabel={dateLabel}
         dayOffset={dayOffset}
@@ -107,8 +121,7 @@ export default function DashboardCalendarPage() {
 
       <div
         ref={containerRef}
-        className="mt-4 overflow-auto rounded-2xl border border-ink-muted bg-ink-soft"
-        style={{ maxHeight: VISIBLE_HEIGHT + HEADER_HEIGHT }}
+        className="mt-4 min-h-0 flex-1 overflow-auto rounded-2xl border border-ink-muted bg-ink-soft"
       >
         <div className="flex min-w-fit">
           <TimeAxis
@@ -127,6 +140,7 @@ export default function DashboardCalendarPage() {
                 key={barber.id}
                 barber={barber}
                 appointments={barberAppts}
+                overrides={statusOverrides}
                 hoverMinutes={hoverForThis}
                 nowTop={isToday ? nowTop : null}
                 now={isToday ? now : null}
@@ -144,11 +158,14 @@ export default function DashboardCalendarPage() {
                     0,
                     0
                   );
-                  setModal({
+                  setNewModal({
                     barberId: barber.id,
                     startsAt: date.toISOString(),
                   });
                 }}
+                onAppointmentClick={(appointmentId) =>
+                  setDetailsModal({ appointmentId })
+                }
               />
             );
           })}
@@ -156,20 +173,30 @@ export default function DashboardCalendarPage() {
       </div>
 
       {!isToday && (
-        <p className="mt-6 text-center text-sm text-bone-dim">
+        <p className="mt-3 shrink-0 text-center text-xs text-bone-dim">
           Демо данни има само за днес. Превключи към „Днес“ за пълния график.
         </p>
       )}
 
-      {modal && (
+      {newModal && (
         <NewAppointmentModal
-          barberId={modal.barberId}
-          startsAt={modal.startsAt}
-          onClose={() => setModal(null)}
+          barberId={newModal.barberId}
+          startsAt={newModal.startsAt}
+          onClose={() => setNewModal(null)}
           onSave={(appt) => {
             setCustomAppointments((prev) => [...prev, appt]);
-            setModal(null);
+            setNewModal(null);
           }}
+        />
+      )}
+
+      {detailsAppointment && (
+        <AppointmentDetailsModal
+          appointment={detailsAppointment}
+          override={statusOverrides[detailsAppointment.id]}
+          now={isToday ? now : null}
+          onClose={() => setDetailsModal(null)}
+          onStatusChange={handleStatusChange}
         />
       )}
     </main>
@@ -190,7 +217,7 @@ function Toolbar({
   onBarberChange: (id: string | "all") => void;
 }) {
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3">
+    <div className="flex shrink-0 flex-wrap items-center justify-between gap-3">
       <div className="flex items-center gap-2">
         <button
           onClick={() => onDayChange(dayOffset - 1)}
@@ -244,7 +271,7 @@ function StatusLegend() {
     "no-show",
   ];
   return (
-    <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-xs text-bone-dim">
+    <div className="mt-3 flex shrink-0 flex-wrap gap-x-5 gap-y-2 text-xs text-bone-dim">
       {statuses.map((s) => {
         const c = STATUS_COLOR_CLASSES[s];
         return (
@@ -258,8 +285,8 @@ function StatusLegend() {
         <span className="h-px w-5 bg-red-500" />
         Текущ час
       </span>
-      <span className="ml-auto text-bone-dim/70">
-        💡 Цъкни в празно поле за да добавиш час
+      <span className="ml-auto hidden text-bone-dim/70 md:inline">
+        💡 Цъкни празно поле за нов час · цъкни запазен час за детайли
       </span>
     </div>
   );
@@ -315,33 +342,31 @@ function TimeAxis({
 function BarberColumn({
   barber,
   appointments,
+  overrides,
   hoverMinutes,
   nowTop,
   now,
   onHoverChange,
   onCreate,
+  onAppointmentClick,
 }: {
   barber: Barber;
   appointments: Appointment[];
+  overrides: Record<string, AppointmentStatus>;
   hoverMinutes: number | null;
   nowTop: number | null;
   now: Date | null;
   onHoverChange: (startMinutes: number | null) => void;
   onCreate: (startMinutes: number) => void;
+  onAppointmentClick: (appointmentId: string) => void;
 }) {
   const initials = barber.name
     .split(" ")
     .map((n) => n[0])
     .join("");
 
-  const workStartMin = barber.workStart * 60;
-  const workEndMin = barber.workEnd * 60;
-  const workStartPx = (workStartMin / 30) * ROW_HEIGHT;
-  const workEndPx = (workEndMin / 30) * ROW_HEIGHT;
-
-  function isWithinWorkingHours(startMin: number): boolean {
-    return startMin >= workStartMin && startMin + 60 <= workEndMin;
-  }
+  const workStartPx = (barber.workStart - START_HOUR) * HOUR_HEIGHT;
+  const workEndPx = (barber.workEnd - START_HOUR) * HOUR_HEIGHT;
 
   function overlapsExisting(startMin: number): boolean {
     return appointments.some((a) => {
@@ -361,7 +386,13 @@ function BarberColumn({
     const totalMin = START_HOUR * 60 + minutesFromStart;
     const snapped = Math.floor(totalMin / 30) * 30;
 
-    if (!isWithinWorkingHours(snapped) || overlapsExisting(snapped)) {
+    // Маркерът работи по целия график; пропускаме само ако пресича запазен час
+    // или излиза извън денонощието.
+    if (snapped < START_HOUR * 60 || snapped + 60 > END_HOUR * 60) {
+      onHoverChange(null);
+      return;
+    }
+    if (overlapsExisting(snapped)) {
       onHoverChange(null);
       return;
     }
@@ -408,25 +439,29 @@ function BarberColumn({
 
         {workStartPx > 0 && (
           <div
-            className="absolute inset-x-0 top-0 bg-ink/75"
+            className="pointer-events-none absolute inset-x-0 top-0 bg-ink/55"
             style={{ height: workStartPx }}
             title="Извън работно време"
           />
         )}
         {workEndPx < TOTAL_HEIGHT && (
           <div
-            className="absolute inset-x-0 bg-ink/75"
+            className="pointer-events-none absolute inset-x-0 bg-ink/55"
             style={{ top: workEndPx, height: TOTAL_HEIGHT - workEndPx }}
             title="Извън работно време"
           />
         )}
 
-        {hoverMinutes !== null && (
-          <HoverMarker startMinutes={hoverMinutes} />
-        )}
+        {hoverMinutes !== null && <HoverMarker startMinutes={hoverMinutes} />}
 
         {appointments.map((a) => (
-          <AppointmentBlock key={a.id} appointment={a} now={now} />
+          <AppointmentBlock
+            key={a.id}
+            appointment={a}
+            statusOverride={overrides[a.id]}
+            now={now}
+            onClick={() => onAppointmentClick(a.id)}
+          />
         ))}
 
         {nowTop !== null && (
@@ -451,10 +486,10 @@ function formatMinutesToTime(totalMin: number) {
 
 function HoverMarker({ startMinutes }: { startMinutes: number }) {
   const top = (startMinutes / 30) * ROW_HEIGHT;
-  const height = HOUR_HEIGHT; // 1 час
+  const height = HOUR_HEIGHT;
   return (
     <div
-      className="pointer-events-none absolute inset-x-1 z-[3] flex flex-col justify-center rounded-md border-2 border-dashed border-accent bg-accent/15 px-2 py-1 text-center text-[11px] font-medium text-accent"
+      className="pointer-events-none absolute inset-x-1 z-[3] flex flex-col justify-center rounded-md border-2 border-dashed border-accent bg-accent/20 px-2 py-1 text-center text-[11px] font-medium text-accent"
       style={{ top, height: height - 2 }}
     >
       <p>+ Нов час</p>
@@ -468,9 +503,11 @@ function HoverMarker({ startMinutes }: { startMinutes: number }) {
 
 function effectiveStatus(
   appointment: Appointment,
+  override: AppointmentStatus | undefined,
   durationMin: number,
   now: Date | null
 ): AppointmentStatus {
+  if (override) return override;
   if (
     appointment.status === "completed" ||
     appointment.status === "no-show" ||
@@ -487,10 +524,14 @@ function effectiveStatus(
 
 function AppointmentBlock({
   appointment,
+  statusOverride,
   now,
+  onClick,
 }: {
   appointment: Appointment;
+  statusOverride: AppointmentStatus | undefined;
   now: Date | null;
+  onClick: () => void;
 }) {
   const service = services.find((s) => s.id === appointment.serviceId);
   if (!service) return null;
@@ -501,7 +542,12 @@ function AppointmentBlock({
   const top = (offsetMin / 30) * ROW_HEIGHT;
   const height = (service.durationMin / 30) * ROW_HEIGHT;
 
-  const status = effectiveStatus(appointment, service.durationMin, now);
+  const status = effectiveStatus(
+    appointment,
+    statusOverride,
+    service.durationMin,
+    now
+  );
   const colors = STATUS_COLOR_CLASSES[status];
   const startLabel = date.toLocaleTimeString("bg-BG", {
     hour: "2-digit",
@@ -514,12 +560,16 @@ function AppointmentBlock({
   });
 
   return (
-    <div
+    <button
+      type="button"
       style={{ top, height: height - 3 }}
-      onClick={(e) => e.stopPropagation()}
+      onClick={(e) => {
+        e.stopPropagation();
+        onClick();
+      }}
       onMouseMove={(e) => e.stopPropagation()}
-      className={`absolute inset-x-1.5 z-[5] overflow-hidden rounded-lg border-l-4 px-2.5 py-1.5 text-[11px] leading-tight shadow-sm transition hover:shadow-md ${colors.bg} ${colors.border} ${
-        status === "no-show" ? "opacity-70" : ""
+      className={`absolute inset-x-1.5 z-[5] overflow-hidden rounded-lg border-l-[5px] px-2.5 py-1.5 text-left text-[11px] leading-tight shadow-md ring-1 ring-inset transition hover:scale-[1.02] hover:shadow-xl ${colors.bg} ${colors.border} ${colors.ring} ${
+        status === "no-show" ? "opacity-75" : ""
       }`}
       title={`${appointment.clientName} • ${service.name} • ${colors.label}${
         appointment.notes ? "\nБележка: " + appointment.notes : ""
@@ -529,22 +579,22 @@ function AppointmentBlock({
         <p className="font-semibold text-bone">
           {startLabel}–{endLabel}
         </p>
-        <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${colors.dot}`} />
+        <span className={`h-2 w-2 shrink-0 rounded-full ${colors.dot}`} />
       </div>
       <p
-        className={`mt-0.5 truncate font-medium text-bone ${
+        className={`mt-0.5 truncate font-semibold text-bone ${
           status === "no-show" ? "line-through" : ""
         }`}
       >
         {appointment.clientName}
       </p>
-      <p className="truncate text-bone-dim">{service.name}</p>
+      <p className="truncate text-bone/85">{service.name}</p>
       {appointment.notes && (
-        <p className="mt-0.5 truncate text-[10px] italic text-bone-dim/80">
+        <p className="mt-0.5 truncate text-[10px] italic text-bone-dim">
           📝 {appointment.notes}
         </p>
       )}
-    </div>
+    </button>
   );
 }
 
@@ -602,6 +652,267 @@ function NewAppointmentModal({
   }
 
   return (
+    <ModalShell onClose={onClose}>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h2 className="font-display text-2xl">Нов час</h2>
+          <p className="mt-1 text-sm text-bone-dim">
+            {barber?.name} · {startLabel}
+            {service ? `–${endLabel}` : ""}
+          </p>
+        </div>
+        <CloseButton onClose={onClose} />
+      </div>
+
+      <form className="mt-5 space-y-3" onSubmit={handleSubmit}>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Field label="Име *">
+            <input
+              type="text"
+              value={firstName}
+              onChange={(e) => setFirstName(e.target.value)}
+              placeholder="Иван"
+              className="input"
+              required
+              autoFocus
+            />
+          </Field>
+          <Field label="Фамилия *">
+            <input
+              type="text"
+              value={lastName}
+              onChange={(e) => setLastName(e.target.value)}
+              placeholder="Петров"
+              className="input"
+              required
+            />
+          </Field>
+        </div>
+
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Field label="Телефон *">
+            <input
+              type="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="+359 88 123 4567"
+              className="input"
+              required
+            />
+          </Field>
+          <Field label="Имейл">
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="ivan@example.com"
+              className="input"
+            />
+          </Field>
+        </div>
+
+        <Field label="Услуга">
+          <select
+            value={serviceId}
+            onChange={(e) => setServiceId(e.target.value)}
+            className="input"
+          >
+            {services.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name} ({s.durationMin} мин · {s.price} лв)
+              </option>
+            ))}
+          </select>
+        </Field>
+
+        <Field label="Бележка">
+          <textarea
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            placeholder="напр. ще закъснее с 10 мин; алергия към одеколон..."
+            rows={3}
+            className="input resize-none"
+          />
+        </Field>
+
+        <div className="flex items-center justify-end gap-3 pt-2">
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-full border border-bone-dim/30 px-5 py-2 text-sm text-bone-dim transition hover:border-bone hover:text-bone"
+          >
+            Отказ
+          </button>
+          <button
+            type="submit"
+            disabled={!canSave}
+            className="rounded-full bg-accent px-5 py-2 text-sm font-medium text-ink transition hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            Запиши часа
+          </button>
+        </div>
+      </form>
+    </ModalShell>
+  );
+}
+
+function AppointmentDetailsModal({
+  appointment,
+  override,
+  now,
+  onClose,
+  onStatusChange,
+}: {
+  appointment: Appointment;
+  override: AppointmentStatus | undefined;
+  now: Date | null;
+  onClose: () => void;
+  onStatusChange: (id: string, status: AppointmentStatus) => void;
+}) {
+  const service = services.find((s) => s.id === appointment.serviceId)!;
+  const barber = barbers.find((b) => b.id === appointment.barberId)!;
+  const status = effectiveStatus(
+    appointment,
+    override,
+    service.durationMin,
+    now
+  );
+  const colors = STATUS_COLOR_CLASSES[status];
+
+  const startDate = new Date(appointment.startsAt);
+  const startLabel = startDate.toLocaleTimeString("bg-BG", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  const endLabel = new Date(
+    startDate.getTime() + service.durationMin * 60_000
+  ).toLocaleTimeString("bg-BG", { hour: "2-digit", minute: "2-digit" });
+
+  const statusActions: {
+    status: AppointmentStatus;
+    label: string;
+    icon: string;
+    desc: string;
+  }[] = [
+    {
+      status: "confirmed",
+      label: "Записан",
+      icon: "📅",
+      desc: "Чака се да дойде",
+    },
+    {
+      status: "in-progress",
+      label: "Дошъл",
+      icon: "✂️",
+      desc: "В момента се обслужва",
+    },
+    {
+      status: "completed",
+      label: "Платено",
+      icon: "💰",
+      desc: "Услугата приключи",
+    },
+    {
+      status: "no-show",
+      label: "Не дойде",
+      icon: "✗",
+      desc: "Клиентът пропусна часа",
+    },
+  ];
+
+  return (
+    <ModalShell onClose={onClose}>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <span
+            className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-medium ${colors.bg} ${colors.ring} ring-1`}
+          >
+            <span className={`h-2 w-2 rounded-full ${colors.dot}`} />
+            {colors.label}
+          </span>
+          <h2 className="mt-2 font-display text-2xl">
+            {appointment.clientName}
+          </h2>
+          <p className="mt-1 text-sm text-bone-dim">
+            {startLabel}–{endLabel} · {barber.name}
+          </p>
+        </div>
+        <CloseButton onClose={onClose} />
+      </div>
+
+      <dl className="mt-5 space-y-2 rounded-xl border border-ink-muted bg-ink/40 p-4 text-sm">
+        <InfoRow label="Услуга" value={`${service.name} (${service.price} лв)`} />
+        <InfoRow label="Телефон" value={appointment.clientPhone} />
+        {appointment.clientEmail && (
+          <InfoRow label="Имейл" value={appointment.clientEmail} />
+        )}
+        {appointment.notes && (
+          <InfoRow label="Бележка" value={`📝 ${appointment.notes}`} />
+        )}
+      </dl>
+
+      <div className="mt-5">
+        <p className="text-xs uppercase tracking-widest text-bone-dim">
+          Промени статуса
+        </p>
+        <div className="mt-3 grid gap-2 sm:grid-cols-2">
+          {statusActions.map((a) => {
+            const c = STATUS_COLOR_CLASSES[a.status];
+            const isActive = status === a.status;
+            return (
+              <button
+                key={a.status}
+                onClick={() => onStatusChange(appointment.id, a.status)}
+                disabled={isActive}
+                className={`flex items-center gap-3 rounded-xl border p-3 text-left transition ${
+                  isActive
+                    ? `${c.bg} ${c.ring} ring-1 cursor-default`
+                    : "border-ink-muted hover:border-accent/60 hover:bg-ink-muted/30"
+                }`}
+              >
+                <span
+                  className={`grid h-9 w-9 shrink-0 place-items-center rounded-lg text-lg ${c.bg}`}
+                >
+                  {a.icon}
+                </span>
+                <div className="min-w-0">
+                  <p className="text-sm font-medium">
+                    {a.label}
+                    {isActive && (
+                      <span className="ml-2 text-[10px] text-bone-dim">
+                        (текущ)
+                      </span>
+                    )}
+                  </p>
+                  <p className="truncate text-[11px] text-bone-dim">{a.desc}</p>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="mt-6 flex justify-end">
+        <button
+          type="button"
+          onClick={onClose}
+          className="rounded-full border border-bone-dim/30 px-5 py-2 text-sm text-bone-dim transition hover:border-bone hover:text-bone"
+        >
+          Затвори
+        </button>
+      </div>
+    </ModalShell>
+  );
+}
+
+function ModalShell({
+  children,
+  onClose,
+}: {
+  children: React.ReactNode;
+  onClose: () => void;
+}) {
+  return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
       onClick={onClose}
@@ -610,113 +921,8 @@ function NewAppointmentModal({
         onClick={(e) => e.stopPropagation()}
         className="w-full max-w-lg rounded-2xl border border-ink-muted bg-ink-soft p-6 shadow-2xl"
       >
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <h2 className="font-display text-2xl">Нов час</h2>
-            <p className="mt-1 text-sm text-bone-dim">
-              {barber?.name} · {startLabel}
-              {service ? `–${endLabel}` : ""}
-            </p>
-          </div>
-          <button
-            onClick={onClose}
-            className="grid h-8 w-8 place-items-center rounded-full text-bone-dim transition hover:bg-ink-muted hover:text-bone"
-            aria-label="Затвори"
-          >
-            ✕
-          </button>
-        </div>
-
-        <form className="mt-5 space-y-3" onSubmit={handleSubmit}>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <Field label="Име *">
-              <input
-                type="text"
-                value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
-                placeholder="Иван"
-                className="input"
-                required
-                autoFocus
-              />
-            </Field>
-            <Field label="Фамилия *">
-              <input
-                type="text"
-                value={lastName}
-                onChange={(e) => setLastName(e.target.value)}
-                placeholder="Петров"
-                className="input"
-                required
-              />
-            </Field>
-          </div>
-
-          <div className="grid gap-3 sm:grid-cols-2">
-            <Field label="Телефон *">
-              <input
-                type="tel"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="+359 88 123 4567"
-                className="input"
-                required
-              />
-            </Field>
-            <Field label="Имейл">
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="ivan@example.com"
-                className="input"
-              />
-            </Field>
-          </div>
-
-          <Field label="Услуга">
-            <select
-              value={serviceId}
-              onChange={(e) => setServiceId(e.target.value)}
-              className="input"
-            >
-              {services.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name} ({s.durationMin} мин · {s.price} лв)
-                </option>
-              ))}
-            </select>
-          </Field>
-
-          <Field label="Бележка">
-            <textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="напр. ще закъснее с 10 мин; алергия към одеколон..."
-              rows={3}
-              className="input resize-none"
-            />
-          </Field>
-
-          <div className="flex items-center justify-end gap-3 pt-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="rounded-full border border-bone-dim/30 px-5 py-2 text-sm text-bone-dim transition hover:border-bone hover:text-bone"
-            >
-              Отказ
-            </button>
-            <button
-              type="submit"
-              disabled={!canSave}
-              className="rounded-full bg-accent px-5 py-2 text-sm font-medium text-ink transition hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              Запиши часа
-            </button>
-          </div>
-        </form>
+        {children}
       </div>
-
       <style jsx>{`
         :global(.input) {
           width: 100%;
@@ -740,6 +946,18 @@ function NewAppointmentModal({
   );
 }
 
+function CloseButton({ onClose }: { onClose: () => void }) {
+  return (
+    <button
+      onClick={onClose}
+      className="grid h-8 w-8 place-items-center rounded-full text-bone-dim transition hover:bg-ink-muted hover:text-bone"
+      aria-label="Затвори"
+    >
+      ✕
+    </button>
+  );
+}
+
 function Field({
   label,
   children,
@@ -754,5 +972,16 @@ function Field({
       </span>
       <div className="mt-1.5">{children}</div>
     </label>
+  );
+}
+
+function InfoRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-start gap-3">
+      <dt className="w-20 shrink-0 text-xs uppercase tracking-widest text-bone-dim">
+        {label}
+      </dt>
+      <dd className="min-w-0 break-words text-sm text-bone">{value}</dd>
+    </div>
   );
 }

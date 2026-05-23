@@ -200,36 +200,41 @@ export const upcomingAppointments = todaysAppointments
 
 export const STATUS_COLOR_CLASSES: Record<
   AppointmentStatus,
-  { bg: string; border: string; label: string; dot: string }
+  { bg: string; border: string; label: string; dot: string; ring: string }
 > = {
   confirmed: {
-    bg: "bg-emerald-500/20",
-    border: "border-l-emerald-400",
+    bg: "bg-emerald-500/40",
+    border: "border-l-emerald-300",
     label: "Записан",
-    dot: "bg-emerald-400",
+    dot: "bg-emerald-300",
+    ring: "ring-emerald-400/60",
   },
   "in-progress": {
-    bg: "bg-amber-500/30",
-    border: "border-l-amber-400",
+    bg: "bg-amber-500/50",
+    border: "border-l-amber-300",
     label: "В момента",
-    dot: "bg-amber-400",
+    dot: "bg-amber-300",
+    ring: "ring-amber-400/60",
   },
   completed: {
-    bg: "bg-violet-500/20",
-    border: "border-l-violet-400",
+    bg: "bg-violet-500/40",
+    border: "border-l-violet-300",
     label: "Платено",
-    dot: "bg-violet-400",
+    dot: "bg-violet-300",
+    ring: "ring-violet-400/60",
   },
   "no-show": {
-    bg: "bg-rose-500/20",
-    border: "border-l-rose-400",
+    bg: "bg-rose-500/40",
+    border: "border-l-rose-300",
     label: "Не дойде",
-    dot: "bg-rose-400",
+    dot: "bg-rose-300",
+    ring: "ring-rose-400/60",
   },
   cancelled: {
-    bg: "bg-zinc-500/20",
+    bg: "bg-zinc-500/30",
     border: "border-l-zinc-400",
     label: "Отказан",
     dot: "bg-zinc-400",
+    ring: "ring-zinc-400/60",
   },
 };

@@ -50,7 +50,7 @@ export default function ReportsPage() {
   barberCounts.sort((a, b) => b.count - a.count);
 
   return (
-    <main className="px-4 py-6 md:px-6">
+    <main className="h-full overflow-y-auto px-4 py-6 md:px-6">
       <div>
         <h1 className="font-display text-2xl md:text-3xl">Отчети</h1>
         <p className="mt-1 text-sm text-bone-dim">
