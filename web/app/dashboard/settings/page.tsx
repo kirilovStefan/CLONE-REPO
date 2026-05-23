@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { useT } from "@/lib/i18n";
 import { useTheme } from "@/lib/theme-context";
+import { useCurrency } from "@/lib/currency-context";
+import { CURRENCIES, type Currency } from "@/lib/currency-store";
 import type { ThemeMode } from "@/lib/theme-store";
 
 export default function SettingsPage() {
@@ -18,6 +20,7 @@ export default function SettingsPage() {
 
       <div className="mt-6 grid gap-4 lg:grid-cols-2">
         <ThemeSection />
+        <CurrencySection />
         <BookingLinkSection />
         <BusinessSection />
         <PlaceholderSection
@@ -70,6 +73,75 @@ function ThemeSection() {
           );
         })}
       </div>
+    </section>
+  );
+}
+
+function CurrencySection() {
+  const { t } = useT();
+  const { currency, setCurrency, showSecondary, setShowSecondary, format } =
+    useCurrency();
+
+  return (
+    <section className="rounded-2xl border border-ink-muted bg-ink-soft p-5">
+      <h2 className="font-display text-lg">{t("settings.currency.title")}</h2>
+      <p className="mt-1 text-sm text-bone-dim">
+        {t("settings.currency.subtitle")}
+      </p>
+
+      <div className="mt-4 grid grid-cols-2 gap-2">
+        {CURRENCIES.map((c) => {
+          const isActive = currency === c.code;
+          return (
+            <button
+              key={c.code}
+              type="button"
+              onClick={() => setCurrency(c.code as Currency)}
+              className={`flex items-center gap-3 rounded-xl border p-3 text-left transition ${
+                isActive
+                  ? "border-accent bg-accent/10"
+                  : "border-ink-muted hover:border-accent/60 hover:bg-ink-muted/30"
+              }`}
+            >
+              <span className="text-2xl leading-none">{c.flag}</span>
+              <div className="min-w-0">
+                <p className="text-sm font-medium">
+                  {c.code} <span className="text-bone-dim">·</span>{" "}
+                  <span className="text-bone-dim">{c.symbol}</span>
+                </p>
+                <p className="truncate text-[11px] text-bone-dim">
+                  {c.nativeLabel}
+                </p>
+              </div>
+              {isActive && <span className="ml-auto text-accent">✓</span>}
+            </button>
+          );
+        })}
+      </div>
+
+      {(currency === "EUR" || currency === "BGN") && (
+        <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-lg border border-ink-muted bg-ink/40 p-3 text-sm text-bone-dim">
+          <input
+            type="checkbox"
+            checked={showSecondary}
+            onChange={(e) => setShowSecondary(e.target.checked)}
+            className="mt-0.5 h-4 w-4 accent-accent"
+          />
+          <span>
+            <span className="text-bone">
+              {t("settings.currency.showSecondary")}
+            </span>
+            <br />
+            <span className="text-[11px] text-bone-dim/80">
+              {t("settings.currency.showSecondaryHint")}
+            </span>
+          </span>
+        </label>
+      )}
+
+      <p className="mt-3 text-[11px] text-bone-dim">
+        {t("settings.currency.example", { price: format(13, true) })}
+      </p>
     </section>
   );
 }

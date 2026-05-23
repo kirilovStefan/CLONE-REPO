@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { useCalendar } from "@/lib/calendar-context";
 import { useT } from "@/lib/i18n";
+import { useCurrency } from "@/lib/currency-context";
 import { generateMockBarcode } from "@/lib/inventory-store";
 import type { Product } from "@/lib/mock-data";
 
@@ -208,9 +209,10 @@ function ProductRow({
   onDelete: () => void;
 }) {
   const { t } = useT();
+  const { format } = useCurrency();
   const level = stockLevel(product);
   const lc = LEVEL_CLASSES[level];
-  const profit = (product.price - (product.costPrice ?? 0)).toFixed(2);
+  const profit = product.price - (product.costPrice ?? 0);
 
   return (
     <li className="flex flex-wrap items-center gap-4 rounded-xl border border-ink-muted bg-ink-soft p-4">
@@ -238,11 +240,11 @@ function ProductRow({
 
       <div className="text-right">
         <p className="font-display text-base">
-          <span className="text-bone-dim/60">{product.costPrice ?? 0} →</span>{" "}
-          <span className="text-accent">{product.price} {t("common.bgn")}</span>
+          <span className="text-bone-dim/60">{format(product.costPrice ?? 0, false)} →</span>{" "}
+          <span className="text-accent">{format(product.price)}</span>
         </p>
         <p className="text-[10px] text-bone-dim">
-          {t("inventory.profit")}: {profit} {t("common.bgn")} ·{" "}
+          {t("inventory.profit")}: {format(profit, false)} ·{" "}
           {t("inventory.commission")} {product.commissionPct}%
         </p>
       </div>
@@ -280,6 +282,7 @@ function ProductFormModal({
   onSave: (input: Omit<Product, "id">) => void;
 }) {
   const { t } = useT();
+  const { format, currency } = useCurrency();
   const [name, setName] = useState(initial?.name ?? "");
   const [brand, setBrand] = useState(initial?.brand ?? "");
   const [category, setCategory] = useState(initial?.category ?? "");
@@ -439,8 +442,8 @@ function ProductFormModal({
             {priceNum > 0 && (
               <p className="mt-2 text-[11px] text-emerald-400">
                 {t("productForm.markup", {
-                  amount: profit,
-                  currency: t("common.bgn"),
+                  amount: format(Number(profit), false),
+                  currency: "",
                 })}
               </p>
             )}

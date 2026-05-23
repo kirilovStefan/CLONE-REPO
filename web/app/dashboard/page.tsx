@@ -24,6 +24,7 @@ import {
   dateToIsoDay,
 } from "@/lib/calendar-context";
 import { useT } from "@/lib/i18n";
+import { useCurrency } from "@/lib/currency-context";
 import type { TranslationKey } from "@/lib/translations";
 
 const START_HOUR = 0;
@@ -1093,6 +1094,7 @@ function NewAppointmentModal({
   onSave: (a: Appointment) => void;
 }) {
   const { t, localeTag } = useT();
+  const { format } = useCurrency();
   const { barbers } = useCalendar();
   const barber = barbers.find((b) => b.id === barberId);
   const [firstName, setFirstName] = useState("");
@@ -1209,7 +1211,7 @@ function NewAppointmentModal({
           >
             {services.map((s) => (
               <option key={s.id} value={s.id}>
-                {s.name} ({s.durationMin} min · {s.price} {t("common.bgn")})
+                {s.name} ({s.durationMin} min · {format(s.price, false)})
               </option>
             ))}
           </select>
@@ -1271,6 +1273,7 @@ function AppointmentDetailsModal({
   onRemoveSale: (saleId: string) => void;
 }) {
   const { t, localeTag } = useT();
+  const { format } = useCurrency();
   const { barbers } = useCalendar();
   const service = services.find((s) => s.id === appointment.serviceId)!;
   const barber = barbers.find((b) => b.id === appointment.barberId)!;
@@ -1354,7 +1357,7 @@ function AppointmentDetailsModal({
       <dl className="mt-5 space-y-2 rounded-xl border border-ink-muted bg-ink/40 p-4 text-sm">
         <InfoRow
           label={t("details.service")}
-          value={`${service.name} (${service.price} ${t("common.bgn")})`}
+          value={`${service.name} (${format(service.price, false)})`}
         />
         {!isBarberView && (
           <InfoRow label={t("details.phone")} value={appointment.clientPhone} />
@@ -1447,6 +1450,7 @@ function ProductSaleSection({
   onRemove: (saleId: string) => void;
 }) {
   const { t } = useT();
+  const { format } = useCurrency();
   const { products } = useCalendar();
   const [query, setQuery] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
@@ -1518,7 +1522,7 @@ function ProductSaleSection({
                     </div>
                     <div className="text-right">
                       <span className="font-display text-accent">
-                        {p.price} {t("common.bgn")}
+                        {format(p.price, false)}
                       </span>
                       <p
                         className={`text-[10px] ${
@@ -1558,14 +1562,14 @@ function ProductSaleSection({
                     </p>
                     <p className="text-[10px] text-bone-dim">
                       {t("products.commissionLine", {
-                        amount: commission.toFixed(2),
+                        price: format(commission, false),
                         pct: sale.commissionPct,
                       })}
                     </p>
                   </div>
                   <div className="flex items-center gap-3">
                     <span className="font-medium text-accent">
-                      {sale.price} {t("common.bgn")}
+                      {format(sale.price, false)}
                     </span>
                     <button
                       type="button"
@@ -1586,11 +1590,11 @@ function ProductSaleSection({
             </span>
             <span>
               <span className="font-display text-base text-accent">
-                {totalSales.toFixed(2)} {t("common.bgn")}
+                {format(totalSales, false)}
               </span>
               <span className="ml-2 text-[11px] text-bone-dim">
                 {t("products.commissionTotal", {
-                  amount: totalCommission.toFixed(2),
+                  price: format(totalCommission, false),
                 })}
               </span>
             </span>

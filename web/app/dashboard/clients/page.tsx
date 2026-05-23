@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { useCalendar } from "@/lib/calendar-context";
 import { useT } from "@/lib/i18n";
+import { useCurrency } from "@/lib/currency-context";
 import {
   services,
   todaysAppointments,
@@ -190,6 +191,7 @@ function ClientRow({
   localeTag: string;
   t: ReturnType<typeof useT>["t"];
 }) {
+  const { format } = useCurrency();
   const stats = computeStats(client.phone);
   const phoneClean = client.phone.replace(/[^\d+]/g, "");
   const phoneDigits = client.phone.replace(/[^\d]/g, "");
@@ -222,12 +224,7 @@ function ClientRow({
                 : t("clients.visitsCount", { count: stats.visitsCount })}
             </span>
             {stats.totalSpent > 0 && (
-              <span className="text-accent">
-                {t("clients.totalSpent", {
-                  amount: stats.totalSpent,
-                  currency: t("common.bgn"),
-                })}
-              </span>
+              <span className="text-accent">{format(stats.totalSpent, false)}</span>
             )}
             {stats.lastVisit ? (
               <span>

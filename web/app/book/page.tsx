@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { services, barbers, type Service, type Barber } from "@/lib/mock-data";
 import { LanguageStrip } from "@/lib/i18n";
+import { useCurrency } from "@/lib/currency-context";
 
 type Step = 1 | 2 | 3 | 4 | 5 | 6;
 
@@ -212,6 +213,7 @@ function ServiceStep({
   selected: Service | null;
   onSelect: (s: Service) => void;
 }) {
+  const { format } = useCurrency();
   return (
     <section>
       <h2 className="font-display text-3xl">Каква услуга желаеш?</h2>
@@ -231,7 +233,7 @@ function ServiceStep({
             >
               <div className="flex items-start justify-between">
                 <p className="font-display text-lg">{s.name}</p>
-                <p className="font-display text-xl text-accent">{s.price} лв.</p>
+                <p className="font-display text-xl text-accent">{format(s.price, false)}</p>
               </div>
               <p className="mt-1 text-sm text-bone-dim">{s.description}</p>
               <p className="mt-3 text-xs text-bone-dim">{s.durationMin} мин.</p>
@@ -590,9 +592,10 @@ function VerificationStep({
 }
 
 function ReviewStep({ data }: { data: BookingState }) {
+  const { format } = useCurrency();
   const rows = [
     { label: "Услуга", value: data.service?.name },
-    { label: "Цена", value: `${data.service?.price} лв.` },
+    { label: "Цена", value: data.service ? format(data.service.price, false) : "" },
     { label: "Продължителност", value: `${data.service?.durationMin} мин.` },
     { label: "Бръснар", value: data.barber?.name },
     {

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { LanguageStrip, useT } from "@/lib/i18n";
+import { useCurrency } from "@/lib/currency-context";
 
 export default function HomePage() {
   return (
@@ -356,7 +357,7 @@ function Pricing() {
           <PlanCard
             nameKey="landing.plan.start.name"
             taglineKey="landing.plan.start.tagline"
-            price="19"
+            priceEur={19}
             features={[
               "1 локация",
               "До 2 бръснари",
@@ -369,7 +370,7 @@ function Pricing() {
           <PlanCard
             nameKey="landing.plan.pro.name"
             taglineKey="landing.plan.pro.tagline"
-            price="49"
+            priceEur={49}
             popular
             features={[
               "До 3 локации",
@@ -384,7 +385,7 @@ function Pricing() {
           <PlanCard
             nameKey="landing.plan.premium.name"
             taglineKey="landing.plan.premium.tagline"
-            price="99"
+            priceEur={99}
             features={[
               "Неограничен брой локации",
               "Неограничен брой бръснари",
@@ -407,18 +408,20 @@ function Pricing() {
 function PlanCard({
   nameKey,
   taglineKey,
-  price,
+  priceEur,
   features,
   popular = false,
 }: {
   nameKey: Parameters<ReturnType<typeof useT>["t"]>[0];
   taglineKey: Parameters<ReturnType<typeof useT>["t"]>[0];
-  price: string;
+  priceEur: number;
   features: string[];
   popular?: boolean;
 }) {
   const { t } = useT();
+  const { format } = useCurrency();
   const name = t(nameKey);
+  const priceLabel = format(priceEur, false);
   return (
     <div
       className={`relative rounded-2xl border p-6 ${
@@ -435,7 +438,7 @@ function PlanCard({
       <p className="font-display text-2xl">{name}</p>
       <p className="text-sm text-bone-dim">{t(taglineKey)}</p>
       <div className="mt-6 flex items-baseline gap-2">
-        <span className="font-display text-5xl text-accent">{price}</span>
+        <span className="font-display text-5xl text-accent">{priceLabel}</span>
         <span className="text-sm text-bone-dim">
           {t("landing.pricing.perMonth")}
         </span>

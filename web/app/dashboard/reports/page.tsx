@@ -10,6 +10,7 @@ import {
 import { loadSales } from "@/lib/sales-store";
 import { useCalendar } from "@/lib/calendar-context";
 import { useT } from "@/lib/i18n";
+import { useCurrency } from "@/lib/currency-context";
 
 function generateLast14Days() {
   const data: { label: string; appointments: number; revenue: number }[] = [];
@@ -31,6 +32,7 @@ function generateLast14Days() {
 export default function ReportsPage() {
   const { currentLocationId, viewAs, products, barbers } = useCalendar();
   const { t, localeTag } = useT();
+  const { format } = useCurrency();
   const [sales, setSales] = useState<ProductSale[]>([]);
   const isBarberView = viewAs !== "owner";
   const currentLocation = locations.find((l) => l.id === currentLocationId);
@@ -150,7 +152,7 @@ export default function ReportsPage() {
         />
         <Kpi
           label={t("reports.kpi.revenue")}
-          value={`${totalRevenue.toLocaleString(localeTag)} ${t("common.bgn")}`}
+          value={format(totalRevenue, false)}
           delta="+34%"
           trend="up"
           deltaSuffix={t("reports.kpi.vsPrevious")}
@@ -259,24 +261,24 @@ export default function ReportsPage() {
                     </div>
                   </div>
                   <p className="font-display text-lg text-accent">
-                    {b.total.toFixed(0)} {t("common.bgn")}
+                    {format(b.total, false)}
                   </p>
                 </div>
                 {b.productRevenue > 0 && (
                   <div className="mt-2 flex gap-3 text-[11px] text-bone-dim">
                     <span>
                       {t("reports.team.servicesLine", {
-                        amount: b.apptRevenue,
+                        price: format(b.apptRevenue, false),
                       })}
                     </span>
                     <span>
                       {t("reports.team.productsLine", {
-                        amount: b.productRevenue,
+                        price: format(b.productRevenue, false),
                       })}
                     </span>
                     <span className="ml-auto text-emerald-400">
                       {t("reports.team.commissionLine", {
-                        amount: b.productCommission.toFixed(2),
+                        price: format(b.productCommission, false),
                       })}
                     </span>
                   </div>
@@ -294,10 +296,10 @@ export default function ReportsPage() {
               {t("reports.products.title")}
             </p>
             <p className="mt-1 font-display text-xl">
-              {totalProductRevenue.toFixed(0)} {t("common.bgn")}
+              {format(totalProductRevenue, false)}
               <span className="ml-3 text-xs font-normal text-bone-dim">
                 {t("reports.products.subtitle", {
-                  amount: totalProductCommission.toFixed(2),
+                  price: format(totalProductCommission, false),
                 })}
               </span>
             </p>
@@ -331,7 +333,7 @@ export default function ReportsPage() {
                   </p>
                 </div>
                 <span className="font-display text-accent">
-                  {revenue} {t("common.bgn")}
+                  {format(revenue, false)}
                 </span>
               </li>
             ))}

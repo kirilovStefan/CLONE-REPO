@@ -345,8 +345,8 @@ export const translations = {
   },
   "products.deletedProduct": { bg: "Изтрит продукт", en: "Deleted product" },
   "products.commissionLine": {
-    bg: "+{amount} лв комисионна ({pct}%)",
-    en: "+{amount} BGN commission ({pct}%)",
+    bg: "+{price} комисионна ({pct}%)",
+    en: "+{price} commission ({pct}%)",
   },
   "products.removeSale": { bg: "Премахни продажба", en: "Remove sale" },
   "products.totalLabel": {
@@ -354,8 +354,8 @@ export const translations = {
     en: "Products total ({count})",
   },
   "products.commissionTotal": {
-    bg: "комисионна {amount} лв",
-    en: "{amount} BGN commission",
+    bg: "комисионна {price}",
+    en: "{price} commission",
   },
 
   // Reports page
@@ -405,22 +405,22 @@ export const translations = {
   "reports.team.hours": { bg: "часа", en: "appts" },
   "reports.team.product": { bg: "продукт", en: "product" },
   "reports.team.products": { bg: "продукта", en: "products" },
-  "reports.team.servicesLine": { bg: "Услуги: {amount} лв", en: "Services: {amount} BGN" },
+  "reports.team.servicesLine": { bg: "Услуги: {price}", en: "Services: {price}" },
   "reports.team.productsLine": {
-    bg: "+ Продукти: {amount} лв",
-    en: "+ Products: {amount} BGN",
+    bg: "+ Продукти: {price}",
+    en: "+ Products: {price}",
   },
   "reports.team.commissionLine": {
-    bg: "Комисионна: {amount} лв",
-    en: "Commission: {amount} BGN",
+    bg: "Комисионна: {price}",
+    en: "Commission: {price}",
   },
   "reports.products.title": {
     bg: "Продажби на продукти (днес)",
     en: "Product sales (today)",
   },
   "reports.products.subtitle": {
-    bg: "комисионни за екипа: {amount} лв",
-    en: "team commissions: {amount} BGN",
+    bg: "комисионни за екипа: {price}",
+    en: "team commissions: {price}",
   },
   "reports.products.salesCount": {
     bg: "{count} продажба",
@@ -1170,13 +1170,13 @@ export const translations = {
     fr: "Commencez avec 7 jours gratuits. Annulez à tout moment.",
   },
   "landing.pricing.perMonth": {
-    bg: "лв / месец",
-    en: "BGN / month",
-    tr: "BGN / ay",
-    de: "BGN / Monat",
-    es: "BGN / mes",
-    it: "BGN / mese",
-    fr: "BGN / mois",
+    bg: "/ месец",
+    en: "/ month",
+    tr: "/ ay",
+    de: "/ Monat",
+    es: "/ mes",
+    it: "/ mese",
+    fr: "/ mois",
   },
   "landing.pricing.popular": {
     bg: "Най-популярен",
@@ -1354,6 +1354,53 @@ export const translations = {
     es: "Contacto",
     it: "Contatti",
     fr: "Contact",
+  },
+
+  // Settings — currency
+  "settings.currency.title": {
+    bg: "💱 Валута",
+    en: "💱 Currency",
+    tr: "💱 Para birimi",
+    de: "💱 Währung",
+    es: "💱 Moneda",
+    it: "💱 Valuta",
+    fr: "💱 Devise",
+  },
+  "settings.currency.subtitle": {
+    bg: "В коя валута да се показват цените в приложението",
+    en: "Which currency the prices are shown in",
+    tr: "Fiyatların hangi para biriminde gösterileceği",
+    de: "In welcher Währung die Preise angezeigt werden",
+    es: "En qué moneda se muestran los precios",
+    it: "In quale valuta vengono mostrati i prezzi",
+    fr: "Dans quelle devise sont affichés les prix",
+  },
+  "settings.currency.showSecondary": {
+    bg: "Покажи и левова равностойност",
+    en: "Show BGN equivalent alongside",
+    tr: "Yanında BGN karşılığını göster",
+    de: "BGN-Äquivalent daneben anzeigen",
+    es: "Mostrar también el equivalente en BGN",
+    it: "Mostra anche l'equivalente in BGN",
+    fr: "Afficher aussi l'équivalent en BGN",
+  },
+  "settings.currency.showSecondaryHint": {
+    bg: "Полезно докато България свикне с еврото",
+    en: "Helpful while Bulgaria adjusts to the Euro",
+    tr: "Bulgaristan euroya alışırken faydalı",
+    de: "Hilfreich, während sich Bulgarien an den Euro gewöhnt",
+    es: "Útil mientras Bulgaria se adapta al euro",
+    it: "Utile mentre la Bulgaria si abitua all'euro",
+    fr: "Utile pendant que la Bulgarie s'habitue à l'euro",
+  },
+  "settings.currency.example": {
+    bg: "Пример: {price}",
+    en: "Example: {price}",
+    tr: "Örnek: {price}",
+    de: "Beispiel: {price}",
+    es: "Ejemplo: {price}",
+    it: "Esempio: {price}",
+    fr: "Exemple : {price}",
   },
 } as const satisfies Record<string, LocalizedString>;
 
