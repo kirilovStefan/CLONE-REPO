@@ -344,6 +344,117 @@ export const translations = {
   "lang.label": { bg: "Език", en: "Language" },
   "lang.bg": { bg: "Български", en: "Bulgarian" },
   "lang.en": { bg: "Английски", en: "English" },
+
+  // Inventory page
+  "inventory.title": { bg: "Стоки", en: "Inventory" },
+  "inventory.subtitle": {
+    bg: "Управление на продуктовия каталог и складовите наличности",
+    en: "Manage product catalog and stock levels",
+  },
+  "inventory.addProduct": { bg: "+ Нов продукт", en: "+ New product" },
+  "inventory.scanBarcode": { bg: "📷 Сканирай баркод", en: "📷 Scan barcode" },
+  "inventory.scanning": { bg: "Сканиране…", en: "Scanning…" },
+  "inventory.searchPlaceholder": {
+    bg: "Търси по име, бранд, баркод…",
+    en: "Search by name, brand, barcode…",
+  },
+  "inventory.filterLowStock": {
+    bg: "Само критично малко",
+    en: "Low stock only",
+  },
+  "inventory.lowStockBanner": {
+    bg: "⚠️ {count} продукт(а) под критичен запас — време е за поръчка",
+    en: "⚠️ {count} product(s) below low-stock threshold — time to reorder",
+  },
+  "inventory.empty": {
+    bg: "Няма продукти. Добави първия си продукт.",
+    en: "No products yet. Add your first product.",
+  },
+  "inventory.noMatch": {
+    bg: "Няма продукти, отговарящи на търсенето.",
+    en: "No products match your search.",
+  },
+  "inventory.stockUnit": { bg: "бр.", en: "units" },
+  "inventory.outOfStock": { bg: "Изчерпано", en: "Out of stock" },
+  "inventory.critical": { bg: "Критично", en: "Critical" },
+  "inventory.low": { bg: "Малко", en: "Low" },
+  "inventory.healthy": { bg: "Налично", en: "In stock" },
+  "inventory.cost": { bg: "Закупна", en: "Cost" },
+  "inventory.retail": { bg: "Продажна", en: "Retail" },
+  "inventory.profit": { bg: "Печалба/бр", en: "Profit/unit" },
+  "inventory.commission": { bg: "Комисионна", en: "Commission" },
+  "inventory.edit": { bg: "Редактирай", en: "Edit" },
+  "inventory.delete": { bg: "Изтрий", en: "Delete" },
+  "inventory.deleteConfirm": {
+    bg: 'Изтриване на "{name}"?',
+    en: 'Delete "{name}"?',
+  },
+  "inventory.barcodeLabel": { bg: "Баркод", en: "Barcode" },
+  "inventory.productsCount": {
+    bg: "{count} продукт(а) в каталога",
+    en: "{count} product(s) in catalog",
+  },
+
+  // Product form
+  "productForm.titleNew": { bg: "Нов продукт", en: "New product" },
+  "productForm.titleEdit": { bg: "Редактирай продукт", en: "Edit product" },
+  "productForm.barcode": { bg: "Баркод", en: "Barcode" },
+  "productForm.barcodePlaceholder": {
+    bg: "Сканирай или въведи ръчно",
+    en: "Scan or enter manually",
+  },
+  "productForm.scanned": { bg: "✓ Сканиран", en: "✓ Scanned" },
+  "productForm.name": { bg: "Име на продукта *", en: "Product name *" },
+  "productForm.namePlaceholder": {
+    bg: "напр. American Crew Forming Cream",
+    en: "e.g. American Crew Forming Cream",
+  },
+  "productForm.brand": { bg: "Бранд *", en: "Brand *" },
+  "productForm.brandPlaceholder": {
+    bg: "напр. American Crew",
+    en: "e.g. American Crew",
+  },
+  "productForm.category": { bg: "Категория", en: "Category" },
+  "productForm.categoryPlaceholder": {
+    bg: "напр. Помада, Восък, Брада…",
+    en: "e.g. Pomade, Wax, Beard…",
+  },
+  "productForm.costPrice": {
+    bg: "Закупна цена * (от дистрибутор)",
+    en: "Cost price * (from supplier)",
+  },
+  "productForm.retailPrice": {
+    bg: "Продажна цена * (за клиент)",
+    en: "Retail price * (to client)",
+  },
+  "productForm.commissionPct": {
+    bg: "Комисионна за бръснаря (%)",
+    en: "Commission for barber (%)",
+  },
+  "productForm.commissionHelp": {
+    bg: "Каква част от продажната цена получава бръснарят",
+    en: "What portion of retail the barber receives",
+  },
+  "productForm.stockQty": { bg: "Брой на склад *", en: "Stock quantity *" },
+  "productForm.lowStockThreshold": {
+    bg: "Критичен запас (под който напомняме за поръчка)",
+    en: "Low stock threshold (when to remind to reorder)",
+  },
+  "productForm.markup": {
+    bg: "Печалба на бройка: {amount} {currency}",
+    en: "Profit per unit: {amount} {currency}",
+  },
+  "productForm.cancel": { bg: "Отказ", en: "Cancel" },
+  "productForm.save": { bg: "💾 Запази", en: "💾 Save" },
+
+  "products.outOfStockAlert": {
+    bg: "Няма наличност от този продукт",
+    en: "This product is out of stock",
+  },
+  "products.lowStockHint": {
+    bg: "Остават {count} бр.",
+    en: "{count} units left",
+  },
 } as const satisfies Record<string, LocalizedString>;
 
 export type TranslationKey = keyof typeof translations;

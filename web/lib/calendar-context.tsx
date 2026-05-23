@@ -9,10 +9,13 @@ import {
 } from "react";
 import {
   locations,
+  products as seedProducts,
+  type Product,
   type TimeOffReason,
   type TimeOffRequest,
 } from "./mock-data";
 import { loadTimeOff, saveTimeOff } from "./time-off-store";
+import { loadInventory, saveInventory } from "./inventory-store";
 
 export type ViewAs = "owner" | string;
 
@@ -36,6 +39,12 @@ type CalendarContextValue = {
   approveTimeOff: (id: string) => void;
   rejectTimeOff: (id: string) => void;
   cancelTimeOff: (id: string) => void;
+  products: Product[];
+  addProduct: (input: Omit<Product, "id">) => Product;
+  updateProduct: (id: string, patch: Partial<Omit<Product, "id">>) => void;
+  removeProduct: (id: string) => void;
+  decrementProductStock: (id: string, by?: number) => boolean;
+  incrementProductStock: (id: string, by?: number) => void;
 };
 
 const CalendarContext = createContext<CalendarContextValue | null>(null);
@@ -52,6 +61,8 @@ export function CalendarProvider({ children }: { children: ReactNode }) {
   const [viewAs, setViewAs] = useState<ViewAs>("owner");
   const [timeOffRequests, setTimeOffRequests] = useState<TimeOffRequest[]>([]);
   const [timeOffLoaded, setTimeOffLoaded] = useState(false);
+  const [products, setProducts] = useState<Product[]>(seedProducts);
+  const [productsLoaded, setProductsLoaded] = useState(false);
 
   useEffect(() => {
     setTimeOffRequests(loadTimeOff());
@@ -67,6 +78,47 @@ export function CalendarProvider({ children }: { children: ReactNode }) {
     if (!timeOffLoaded) return;
     saveTimeOff(timeOffRequests);
   }, [timeOffRequests, timeOffLoaded]);
+
+  useEffect(() => {
+    const stored = loadInventory();
+    if (stored && stored.length > 0) setProducts(stored);
+    setProductsLoaded(true);
+  }, []);
+
+  useEffect(() => {
+    if (!productsLoaded) return;
+    saveInventory(products);
+  }, [products, productsLoaded]);
+
+  function addProduct(input: Omit<Product, "id">): Product {
+    const id = `p-local-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+    const product: Product = { ...input, id };
+    setProducts((prev) => [...prev, product]);
+    return product;
+  }
+
+  function updateProduct(id: string, patch: Partial<Omit<Product, "id">>) {
+    setProducts((prev) => prev.map((p) => (p.id === id ? { ...p, ...patch } : p)));
+  }
+
+  function removeProduct(id: string) {
+    setProducts((prev) => prev.filter((p) => p.id !== id));
+  }
+
+  function decrementProductStock(id: string, by: number = 1): boolean {
+    const product = products.find((p) => p.id === id);
+    if (!product || product.stockQty < by) return false;
+    setProducts((prev) =>
+      prev.map((p) => (p.id === id ? { ...p, stockQty: p.stockQty - by } : p))
+    );
+    return true;
+  }
+
+  function incrementProductStock(id: string, by: number = 1) {
+    setProducts((prev) =>
+      prev.map((p) => (p.id === id ? { ...p, stockQty: p.stockQty + by } : p))
+    );
+  }
 
   function setCurrentLocationId(id: string) {
     setCurrentLocationIdRaw(id);
@@ -121,6 +173,12 @@ export function CalendarProvider({ children }: { children: ReactNode }) {
         approveTimeOff,
         rejectTimeOff,
         cancelTimeOff,
+        products,
+        addProduct,
+        updateProduct,
+        removeProduct,
+        decrementProductStock,
+        incrementProductStock,
       }}
     >
       {children}

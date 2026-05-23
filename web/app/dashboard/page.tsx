@@ -5,12 +5,12 @@ import {
   barbers,
   services,
   todaysAppointments,
-  products,
   STATUS_COLOR_CLASSES,
   TIME_OFF_REASON_LABEL,
   type Appointment,
   type Barber,
   type AppointmentStatus,
+  type Product,
   type ProductSale,
   type TimeOffRequest,
   type TimeOffReason,
@@ -83,6 +83,9 @@ export default function DashboardCalendarPage() {
     viewAs,
     timeOffRequests,
     addTimeOff,
+    products,
+    decrementProductStock,
+    incrementProductStock,
   } = useCalendar();
   const today = useMemo(() => startOfDay(new Date()), []);
   const isToday = isSameDay(selectedDate, today);
@@ -133,6 +136,10 @@ export default function DashboardCalendarPage() {
     const product = products.find((p) => p.id === productId);
     const appt = allAppointments.find((a) => a.id === appointmentId);
     if (!product || !appt) return;
+    if (!decrementProductStock(productId)) {
+      // Out of stock — refuse silently. The dropdown should not have shown it.
+      return;
+    }
     const effective = applyOverride(appt, overrides[appointmentId]);
     const sale: ProductSale = {
       id: `sale-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
@@ -147,7 +154,9 @@ export default function DashboardCalendarPage() {
   }
 
   function handleRemoveSale(saleId: string) {
+    const sale = productSales.find((s) => s.id === saleId);
     setProductSales((prev) => prev.filter((s) => s.id !== saleId));
+    if (sale) incrementProductStock(sale.productId, 1);
   }
 
   useEffect(() => {
@@ -1435,6 +1444,7 @@ function ProductSaleSection({
   onRemove: (saleId: string) => void;
 }) {
   const { t } = useT();
+  const { products } = useCalendar();
   const [query, setQuery] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
 
@@ -1444,12 +1454,14 @@ function ProductSaleSection({
     return products
       .filter(
         (p) =>
-          p.name.toLowerCase().includes(q) ||
-          p.brand.toLowerCase().includes(q) ||
-          p.category.toLowerCase().includes(q)
+          p.stockQty > 0 &&
+          (p.name.toLowerCase().includes(q) ||
+            p.brand.toLowerCase().includes(q) ||
+            p.category.toLowerCase().includes(q) ||
+            (p.barcode ?? "").includes(q))
       )
       .slice(0, 6);
-  }, [query]);
+  }, [query, products]);
 
   const totalSales = sales.reduce((sum, s) => sum + s.price, 0);
   const totalCommission = sales.reduce(
@@ -1480,31 +1492,43 @@ function ProductSaleSection({
         />
         {showDropdown && matches.length > 0 && (
           <ul className="absolute inset-x-0 top-full z-10 mt-1 max-h-64 overflow-y-auto rounded-xl border border-ink-muted bg-ink-soft shadow-2xl">
-            {matches.map((p) => (
-              <li key={p.id}>
-                <button
-                  type="button"
-                  onMouseDown={(e) => {
-                    e.preventDefault();
-                    onSell(p.id);
-                    setQuery("");
-                    setShowDropdown(false);
-                  }}
-                  className="flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left transition hover:bg-accent/15"
-                >
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-medium">{p.name}</p>
-                    <p className="text-[11px] text-bone-dim">
-                      {p.brand} · {p.category} ·{" "}
-                      {t("products.commissionPct", { pct: p.commissionPct })}
-                    </p>
-                  </div>
-                  <span className="font-display text-accent">
-                    {p.price} {t("common.bgn")}
-                  </span>
-                </button>
-              </li>
-            ))}
+            {matches.map((p) => {
+              const isLow = p.stockQty <= p.lowStockThreshold;
+              return (
+                <li key={p.id}>
+                  <button
+                    type="button"
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      onSell(p.id);
+                      setQuery("");
+                      setShowDropdown(false);
+                    }}
+                    className="flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left transition hover:bg-accent/15"
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium">{p.name}</p>
+                      <p className="text-[11px] text-bone-dim">
+                        {p.brand} · {p.category} ·{" "}
+                        {t("products.commissionPct", { pct: p.commissionPct })}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <span className="font-display text-accent">
+                        {p.price} {t("common.bgn")}
+                      </span>
+                      <p
+                        className={`text-[10px] ${
+                          isLow ? "text-rose-300" : "text-bone-dim/70"
+                        }`}
+                      >
+                        {t("products.lowStockHint", { count: p.stockQty })}
+                      </p>
+                    </div>
+                  </button>
+                </li>
+              );
+            })}
           </ul>
         )}
         {showDropdown && query.trim() && matches.length === 0 && (

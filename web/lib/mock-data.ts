@@ -57,6 +57,10 @@ export type Product = {
   category: string;
   price: number;
   commissionPct: number;
+  barcode?: string;
+  costPrice?: number;
+  stockQty: number;
+  lowStockThreshold: number;
 };
 
 export type ProductSale = {
@@ -99,20 +103,20 @@ export const TIME_OFF_REASON_LABEL: Record<TimeOffReason, string> = {
 };
 
 export const products: Product[] = [
-  { id: "p-acrew-fc", name: "American Crew Forming Cream", brand: "American Crew", category: "Помада", price: 35, commissionPct: 10 },
-  { id: "p-reuzel-pink", name: "Reuzel Pink Pomade", brand: "Reuzel", category: "Помада", price: 42, commissionPct: 10 },
-  { id: "p-reuzel-grease", name: "Reuzel Grease (Heavy Hold)", brand: "Reuzel", category: "Помада", price: 44, commissionPct: 10 },
-  { id: "p-layrite-cement", name: "Layrite Cement Clay", brand: "Layrite", category: "Глина", price: 38, commissionPct: 12 },
-  { id: "p-beardbrand-oil", name: "Beardbrand Beard Oil — Tree Ranger", brand: "Beardbrand", category: "Масло за брада", price: 45, commissionPct: 15 },
-  { id: "p-proraso-as", name: "Proraso Sandalwood Aftershave", brand: "Proraso", category: "Афтършейв", price: 28, commissionPct: 10 },
-  { id: "p-proraso-cream", name: "Proraso Shaving Cream", brand: "Proraso", category: "Крем за бръснене", price: 22, commissionPct: 10 },
-  { id: "p-suavecito", name: "Suavecito Original Pomade", brand: "Suavecito", category: "Помада", price: 30, commissionPct: 10 },
-  { id: "p-hairgum", name: "Hairgum Old School Wax", brand: "Hairgum", category: "Восък", price: 25, commissionPct: 12 },
-  { id: "p-fawcett-wash", name: "Captain Fawcett Beard Wash", brand: "Captain Fawcett", category: "Шампоан за брада", price: 32, commissionPct: 15 },
-  { id: "p-murrays", name: "Murray's Superior Pomade", brand: "Murray's", category: "Помада", price: 22, commissionPct: 10 },
-  { id: "p-clubman-talc", name: "Pinaud Clubman Talc", brand: "Pinaud Clubman", category: "Пудра", price: 18, commissionPct: 10 },
-  { id: "p-blind-barber", name: "Blind Barber 90-Proof Pomade", brand: "Blind Barber", category: "Помада", price: 48, commissionPct: 12 },
-  { id: "p-uppercut", name: "Uppercut Deluxe Matt Pomade", brand: "Uppercut Deluxe", category: "Помада", price: 34, commissionPct: 10 },
+  { id: "p-acrew-fc", name: "American Crew Forming Cream", brand: "American Crew", category: "Помада", price: 35, commissionPct: 10, barcode: "5060005423456", costPrice: 21, stockQty: 12, lowStockThreshold: 3 },
+  { id: "p-reuzel-pink", name: "Reuzel Pink Pomade", brand: "Reuzel", category: "Помада", price: 42, commissionPct: 10, barcode: "8717185329506", costPrice: 25, stockQty: 8, lowStockThreshold: 3 },
+  { id: "p-reuzel-grease", name: "Reuzel Grease (Heavy Hold)", brand: "Reuzel", category: "Помада", price: 44, commissionPct: 10, barcode: "8717185329513", costPrice: 26, stockQty: 2, lowStockThreshold: 3 },
+  { id: "p-layrite-cement", name: "Layrite Cement Clay", brand: "Layrite", category: "Глина", price: 38, commissionPct: 12, barcode: "857154003142", costPrice: 22, stockQty: 15, lowStockThreshold: 3 },
+  { id: "p-beardbrand-oil", name: "Beardbrand Beard Oil — Tree Ranger", brand: "Beardbrand", category: "Масло за брада", price: 45, commissionPct: 15, barcode: "856459006012", costPrice: 27, stockQty: 0, lowStockThreshold: 3 },
+  { id: "p-proraso-as", name: "Proraso Sandalwood Aftershave", brand: "Proraso", category: "Афтършейв", price: 28, commissionPct: 10, barcode: "8004395003089", costPrice: 16, stockQty: 6, lowStockThreshold: 5 },
+  { id: "p-proraso-cream", name: "Proraso Shaving Cream", brand: "Proraso", category: "Крем за бръснене", price: 22, commissionPct: 10, barcode: "8004395001503", costPrice: 13, stockQty: 11, lowStockThreshold: 3 },
+  { id: "p-suavecito", name: "Suavecito Original Pomade", brand: "Suavecito", category: "Помада", price: 30, commissionPct: 10, barcode: "840074300043", costPrice: 18, stockQty: 9, lowStockThreshold: 3 },
+  { id: "p-hairgum", name: "Hairgum Old School Wax", brand: "Hairgum", category: "Восък", price: 25, commissionPct: 12, barcode: "3138980015401", costPrice: 15, stockQty: 4, lowStockThreshold: 3 },
+  { id: "p-fawcett-wash", name: "Captain Fawcett Beard Wash", brand: "Captain Fawcett", category: "Шампоан за брада", price: 32, commissionPct: 15, barcode: "738435221324", costPrice: 19, stockQty: 3, lowStockThreshold: 3 },
+  { id: "p-murrays", name: "Murray's Superior Pomade", brand: "Murray's", category: "Помада", price: 22, commissionPct: 10, barcode: "022400702209", costPrice: 13, stockQty: 14, lowStockThreshold: 3 },
+  { id: "p-clubman-talc", name: "Pinaud Clubman Talc", brand: "Pinaud Clubman", category: "Пудра", price: 18, commissionPct: 10, barcode: "070066011302", costPrice: 11, stockQty: 7, lowStockThreshold: 3 },
+  { id: "p-blind-barber", name: "Blind Barber 90-Proof Pomade", brand: "Blind Barber", category: "Помада", price: 48, commissionPct: 12, barcode: "853702005014", costPrice: 29, stockQty: 5, lowStockThreshold: 3 },
+  { id: "p-uppercut", name: "Uppercut Deluxe Matt Pomade", brand: "Uppercut Deluxe", category: "Помада", price: 34, commissionPct: 10, barcode: "754590310031", costPrice: 20, stockQty: 10, lowStockThreshold: 3 },
 ];
 
 export const services: Service[] = [

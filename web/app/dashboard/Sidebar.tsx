@@ -29,7 +29,7 @@ const items: Item[] = [
   },
   { href: "/dashboard/services", labelKey: "nav.services", icon: "🧾", soon: true },
   { href: "/dashboard/finance", labelKey: "nav.finance", icon: "💰", soon: true },
-  { href: "/dashboard/inventory", labelKey: "nav.inventory", icon: "📦", soon: true },
+  { href: "/dashboard/inventory", labelKey: "nav.inventory", icon: "📦" },
   { href: "/dashboard/settings", labelKey: "nav.settings", icon: "⚙️", soon: true },
 ];
 
@@ -268,12 +268,18 @@ function MiniCalendar() {
 function Nav() {
   const pathname = usePathname();
   const { t } = useT();
+  const { products } = useCalendar();
+  const lowStockCount = products.filter(
+    (p) => p.stockQty <= p.lowStockThreshold
+  ).length;
   return (
     <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-2">
       {items.map((item) => {
         const isActive =
           pathname === item.href ||
           (item.href !== "/dashboard" && pathname.startsWith(item.href));
+        const showLowStockBadge =
+          item.href === "/dashboard/inventory" && lowStockCount > 0;
         return (
           <Link
             key={item.href}
@@ -289,6 +295,14 @@ function Nav() {
               <span className="text-base">{item.icon}</span>
               <span>{t(item.labelKey)}</span>
             </span>
+            {showLowStockBadge && (
+              <span
+                className="grid h-5 min-w-5 place-items-center rounded-full bg-rose-500 px-1.5 text-[10px] font-bold text-white"
+                title={t("inventory.lowStockBanner", { count: lowStockCount })}
+              >
+                {lowStockCount}
+              </span>
+            )}
             {item.badgeKey && (
               <span className="rounded-full bg-accent px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-ink">
                 {t(item.badgeKey)}
