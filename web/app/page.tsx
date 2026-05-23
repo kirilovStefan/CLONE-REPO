@@ -38,7 +38,7 @@ function Nav() {
           <a href="#features" className="hover:text-bone">Функции</a>
           <a href="#services" className="hover:text-bone">Услуги</a>
           <a href="#barbers" className="hover:text-bone">Бръснари</a>
-          <a href="#how" className="hover:text-bone">Как работи</a>
+          <Link href="/dashboard" className="hover:text-bone">Демо панел</Link>
         </div>
         <Link
           href="/book"
