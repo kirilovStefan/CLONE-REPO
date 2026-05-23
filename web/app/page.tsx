@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { services, barbers, upcomingAppointments } from "@/lib/mock-data";
 
 function formatTime(iso: string) {
@@ -39,12 +40,12 @@ function Nav() {
           <a href="#barbers" className="hover:text-bone">Бръснари</a>
           <a href="#how" className="hover:text-bone">Как работи</a>
         </div>
-        <a
-          href="#cta"
+        <Link
+          href="/book"
           className="rounded-full bg-accent px-4 py-2 text-sm font-medium text-ink transition hover:bg-accent-hover"
         >
-          Започни безплатно
-        </a>
+          Запиши час
+        </Link>
       </div>
     </nav>
   );
@@ -68,12 +69,12 @@ function Hero() {
             график, услуги и клиенти на едно място. Уеб + мобилно приложение.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
-            <a
-              href="#cta"
+            <Link
+              href="/book"
               className="rounded-full bg-accent px-6 py-3 font-medium text-ink transition hover:bg-accent-hover"
             >
-              Започни безплатно
-            </a>
+              Запиши час
+            </Link>
             <a
               href="#features"
               className="rounded-full border border-bone-dim/30 px-6 py-3 font-medium text-bone transition hover:border-bone"
@@ -219,9 +220,12 @@ function ServicesPreview() {
               </div>
               <div className="text-right">
                 <p className="font-display text-2xl text-accent">{s.price} лв.</p>
-                <button className="mt-2 rounded-full border border-bone-dim/30 px-3 py-1 text-xs hover:border-bone">
+                <Link
+                  href="/book"
+                  className="mt-2 inline-block rounded-full border border-bone-dim/30 px-3 py-1 text-xs hover:border-bone"
+                >
                   Запиши
-                </button>
+                </Link>
               </div>
             </div>
           ))}
