@@ -69,6 +69,35 @@ export type ProductSale = {
   soldAt: string;
 };
 
+export type TimeOffReason =
+  | "course"
+  | "vacation"
+  | "sick"
+  | "personal"
+  | "other";
+
+export type TimeOffStatus = "pending" | "approved" | "rejected";
+
+export type TimeOffRequest = {
+  id: string;
+  barberId: string;
+  startDate: string;
+  endDate: string;
+  reason: TimeOffReason;
+  notes?: string;
+  status: TimeOffStatus;
+  createdAt: string;
+  decidedAt?: string;
+};
+
+export const TIME_OFF_REASON_LABEL: Record<TimeOffReason, string> = {
+  course: "Курс / обучение",
+  vacation: "Отпуска",
+  sick: "Болничен",
+  personal: "Лична причина",
+  other: "Друго",
+};
+
 export const products: Product[] = [
   { id: "p-acrew-fc", name: "American Crew Forming Cream", brand: "American Crew", category: "Помада", price: 35, commissionPct: 10 },
   { id: "p-reuzel-pink", name: "Reuzel Pink Pomade", brand: "Reuzel", category: "Помада", price: 42, commissionPct: 10 },

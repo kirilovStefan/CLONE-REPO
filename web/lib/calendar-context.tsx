@@ -3,12 +3,26 @@
 import {
   createContext,
   useContext,
+  useEffect,
   useState,
   type ReactNode,
 } from "react";
-import { locations } from "./mock-data";
+import {
+  locations,
+  type TimeOffReason,
+  type TimeOffRequest,
+} from "./mock-data";
+import { loadTimeOff, saveTimeOff } from "./time-off-store";
 
 export type ViewAs = "owner" | string;
+
+type NewTimeOffInput = {
+  barberId: string;
+  startDate: string;
+  endDate: string;
+  reason: TimeOffReason;
+  notes?: string;
+};
 
 type CalendarContextValue = {
   selectedDate: Date;
@@ -17,6 +31,11 @@ type CalendarContextValue = {
   setCurrentLocationId: (id: string) => void;
   viewAs: ViewAs;
   setViewAs: (v: ViewAs) => void;
+  timeOffRequests: TimeOffRequest[];
+  addTimeOff: (input: NewTimeOffInput) => void;
+  approveTimeOff: (id: string) => void;
+  rejectTimeOff: (id: string) => void;
+  cancelTimeOff: (id: string) => void;
 };
 
 const CalendarContext = createContext<CalendarContextValue | null>(null);
@@ -31,11 +50,61 @@ export function CalendarProvider({ children }: { children: ReactNode }) {
     locations[0].id
   );
   const [viewAs, setViewAs] = useState<ViewAs>("owner");
+  const [timeOffRequests, setTimeOffRequests] = useState<TimeOffRequest[]>([]);
+  const [timeOffLoaded, setTimeOffLoaded] = useState(false);
+
+  useEffect(() => {
+    setTimeOffRequests(loadTimeOff());
+    setTimeOffLoaded(true);
+    function onStorage(e: StorageEvent) {
+      if (e.key === "barberos-time-off") setTimeOffRequests(loadTimeOff());
+    }
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, []);
+
+  useEffect(() => {
+    if (!timeOffLoaded) return;
+    saveTimeOff(timeOffRequests);
+  }, [timeOffRequests, timeOffLoaded]);
 
   function setCurrentLocationId(id: string) {
     setCurrentLocationIdRaw(id);
-    // Сменяме локация → връщаме се към собственик
     setViewAs("owner");
+  }
+
+  function addTimeOff(input: NewTimeOffInput) {
+    const req: TimeOffRequest = {
+      ...input,
+      id: `to-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      status: "pending",
+      createdAt: new Date().toISOString(),
+    };
+    setTimeOffRequests((prev) => [...prev, req]);
+  }
+
+  function approveTimeOff(id: string) {
+    setTimeOffRequests((prev) =>
+      prev.map((r) =>
+        r.id === id
+          ? { ...r, status: "approved", decidedAt: new Date().toISOString() }
+          : r
+      )
+    );
+  }
+
+  function rejectTimeOff(id: string) {
+    setTimeOffRequests((prev) =>
+      prev.map((r) =>
+        r.id === id
+          ? { ...r, status: "rejected", decidedAt: new Date().toISOString() }
+          : r
+      )
+    );
+  }
+
+  function cancelTimeOff(id: string) {
+    setTimeOffRequests((prev) => prev.filter((r) => r.id !== id));
   }
 
   return (
@@ -47,6 +116,11 @@ export function CalendarProvider({ children }: { children: ReactNode }) {
         setCurrentLocationId,
         viewAs,
         setViewAs,
+        timeOffRequests,
+        addTimeOff,
+        approveTimeOff,
+        rejectTimeOff,
+        cancelTimeOff,
       }}
     >
       {children}
@@ -80,4 +154,28 @@ export function maskClientName(fullName: string): string {
   const parts = fullName.trim().split(/\s+/);
   if (parts.length === 1) return parts[0];
   return `${parts[0]} ${parts[1][0]}.`;
+}
+
+export function dateToIsoDay(d: Date): string {
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+export function getApprovedTimeOff(
+  requests: TimeOffRequest[],
+  barberId: string,
+  date: Date
+): TimeOffRequest | null {
+  const dayStr = dateToIsoDay(date);
+  return (
+    requests.find(
+      (r) =>
+        r.status === "approved" &&
+        r.barberId === barberId &&
+        r.startDate <= dayStr &&
+        r.endDate >= dayStr
+    ) ?? null
+  );
 }

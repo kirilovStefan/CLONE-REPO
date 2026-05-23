@@ -4,7 +4,11 @@ import Link from "next/link";
 import { useState, type ReactNode } from "react";
 import { Sidebar } from "./Sidebar";
 import { CalendarProvider, useCalendar } from "@/lib/calendar-context";
-import { barbers } from "@/lib/mock-data";
+import {
+  barbers,
+  TIME_OFF_REASON_LABEL,
+  type TimeOffRequest,
+} from "@/lib/mock-data";
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   return (
@@ -23,6 +27,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 function TopBar() {
   return (
     <header className="relative z-40 flex shrink-0 items-center justify-end gap-3 border-b border-ink-muted/40 bg-ink/95 px-6 py-2.5 backdrop-blur">
+      <NotificationBell />
       <ViewAsSelector />
       <span className="text-bone-dim/30">·</span>
       <Link
@@ -40,6 +45,190 @@ function TopBar() {
       </Link>
       <UserAvatar />
     </header>
+  );
+}
+
+function NotificationBell() {
+  const {
+    viewAs,
+    timeOffRequests,
+    approveTimeOff,
+    rejectTimeOff,
+    cancelTimeOff,
+  } = useCalendar();
+  const [open, setOpen] = useState(false);
+
+  const isOwner = viewAs === "owner";
+  const visible: TimeOffRequest[] = isOwner
+    ? [...timeOffRequests].sort((a, b) => {
+        if (a.status === "pending" && b.status !== "pending") return -1;
+        if (b.status === "pending" && a.status !== "pending") return 1;
+        return b.createdAt.localeCompare(a.createdAt);
+      })
+    : timeOffRequests
+        .filter((r) => r.barberId === viewAs)
+        .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+
+  const badgeCount = isOwner
+    ? visible.filter((r) => r.status === "pending").length
+    : visible.filter((r) => r.status === "pending").length;
+
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        onBlur={() => setTimeout(() => setOpen(false), 200)}
+        className="relative grid h-9 w-9 place-items-center rounded-lg border border-ink-muted/60 text-base transition hover:border-accent"
+        aria-label="Известия"
+        title="Известия"
+      >
+        🔔
+        {badgeCount > 0 && (
+          <span className="absolute -right-1 -top-1 grid h-4 min-w-4 place-items-center rounded-full bg-rose-500 px-1 text-[10px] font-bold text-white">
+            {badgeCount}
+          </span>
+        )}
+      </button>
+
+      {open && (
+        <div className="absolute right-0 top-full z-50 mt-1 w-80 overflow-hidden rounded-xl border border-ink-muted bg-ink-soft shadow-2xl">
+          <div className="border-b border-ink-muted/40 px-3 py-2">
+            <p className="text-xs uppercase tracking-widest text-bone-dim">
+              {isOwner ? "Заявки за отсъствие" : "Моите заявки"}
+            </p>
+          </div>
+          {visible.length === 0 ? (
+            <p className="px-4 py-6 text-center text-sm text-bone-dim">
+              {isOwner ? "Няма заявки" : "Все още нямаш изпратени заявки"}
+            </p>
+          ) : (
+            <ul className="max-h-96 overflow-y-auto divide-y divide-ink-muted/40">
+              {visible.map((req) => (
+                <TimeOffRow
+                  key={req.id}
+                  request={req}
+                  isOwner={isOwner}
+                  onApprove={() => approveTimeOff(req.id)}
+                  onReject={() => rejectTimeOff(req.id)}
+                  onCancel={() => cancelTimeOff(req.id)}
+                />
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function TimeOffRow({
+  request,
+  isOwner,
+  onApprove,
+  onReject,
+  onCancel,
+}: {
+  request: TimeOffRequest;
+  isOwner: boolean;
+  onApprove: () => void;
+  onReject: () => void;
+  onCancel: () => void;
+}) {
+  const barber = barbers.find((b) => b.id === request.barberId);
+  const initials = barber
+    ? barber.name
+        .split(" ")
+        .map((n) => n[0])
+        .join("")
+    : "?";
+  const startLabel = new Date(request.startDate).toLocaleDateString("bg-BG", {
+    day: "numeric",
+    month: "short",
+  });
+  const endLabel = new Date(request.endDate).toLocaleDateString("bg-BG", {
+    day: "numeric",
+    month: "short",
+  });
+
+  const statusBadge: Record<typeof request.status, { label: string; cls: string }> = {
+    pending: {
+      label: "Чака",
+      cls: "bg-amber-500/30 text-amber-200 ring-1 ring-amber-400/60",
+    },
+    approved: {
+      label: "Одобрена",
+      cls: "bg-emerald-500/30 text-emerald-200 ring-1 ring-emerald-400/60",
+    },
+    rejected: {
+      label: "Отказана",
+      cls: "bg-rose-500/30 text-rose-200 ring-1 ring-rose-400/60",
+    },
+  };
+  const sb = statusBadge[request.status];
+
+  return (
+    <li className="px-3 py-3">
+      <div className="flex items-start gap-3">
+        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-accent/20 text-xs font-medium text-accent">
+          {initials}
+        </span>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center justify-between gap-2">
+            <p className="truncate text-sm font-medium">{barber?.name ?? "?"}</p>
+            <span
+              className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${sb.cls}`}
+            >
+              {sb.label}
+            </span>
+          </div>
+          <p className="mt-0.5 text-[11px] text-bone-dim">
+            {TIME_OFF_REASON_LABEL[request.reason]} · {startLabel} – {endLabel}
+          </p>
+          {request.notes && (
+            <p className="mt-1 text-[11px] italic text-bone-dim/80">
+              📝 {request.notes}
+            </p>
+          )}
+        </div>
+      </div>
+      {isOwner && request.status === "pending" && (
+        <div className="mt-2 flex gap-2">
+          <button
+            type="button"
+            onMouseDown={(e) => {
+              e.preventDefault();
+              onApprove();
+            }}
+            className="flex-1 rounded-md bg-emerald-500/20 px-2 py-1.5 text-xs font-medium text-emerald-200 transition hover:bg-emerald-500/30"
+          >
+            ✓ Одобри
+          </button>
+          <button
+            type="button"
+            onMouseDown={(e) => {
+              e.preventDefault();
+              onReject();
+            }}
+            className="flex-1 rounded-md bg-rose-500/20 px-2 py-1.5 text-xs font-medium text-rose-200 transition hover:bg-rose-500/30"
+          >
+            ✗ Откажи
+          </button>
+        </div>
+      )}
+      {!isOwner && request.status === "pending" && (
+        <button
+          type="button"
+          onMouseDown={(e) => {
+            e.preventDefault();
+            onCancel();
+          }}
+          className="mt-2 w-full rounded-md border border-ink-muted px-2 py-1.5 text-xs text-bone-dim transition hover:border-rose-400 hover:text-rose-300"
+        >
+          Откажи заявката
+        </button>
+      )}
+    </li>
   );
 }
 

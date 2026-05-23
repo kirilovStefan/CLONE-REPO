@@ -7,10 +7,13 @@ import {
   todaysAppointments,
   products,
   STATUS_COLOR_CLASSES,
+  TIME_OFF_REASON_LABEL,
   type Appointment,
   type Barber,
   type AppointmentStatus,
   type ProductSale,
+  type TimeOffRequest,
+  type TimeOffReason,
 } from "@/lib/mock-data";
 import { loadSales, saveSales } from "@/lib/sales-store";
 import {
@@ -18,6 +21,8 @@ import {
   isSameDay,
   startOfDay,
   maskClientName,
+  getApprovedTimeOff,
+  dateToIsoDay,
 } from "@/lib/calendar-context";
 
 const START_HOUR = 0;
@@ -69,14 +74,21 @@ function applyOverride(a: Appointment, ov?: AppointmentOverride): Appointment {
 }
 
 export default function DashboardCalendarPage() {
-  const { selectedDate, setSelectedDate, currentLocationId, viewAs } =
-    useCalendar();
+  const {
+    selectedDate,
+    setSelectedDate,
+    currentLocationId,
+    viewAs,
+    timeOffRequests,
+    addTimeOff,
+  } = useCalendar();
   const today = useMemo(() => startOfDay(new Date()), []);
   const isToday = isSameDay(selectedDate, today);
   const isBarberView = viewAs !== "owner";
   const [selectedBarberId, setSelectedBarberId] = useState<string | "all">(
     "all"
   );
+  const [timeOffModalOpen, setTimeOffModalOpen] = useState(false);
   const [now, setNow] = useState<Date | null>(null);
   const [customAppointments, setCustomAppointments] = useState<Appointment[]>(
     []
@@ -437,6 +449,7 @@ export default function DashboardCalendarPage() {
         onBarberChange={setSelectedBarberId}
         currentLocationId={currentLocationId}
         isBarberView={isBarberView}
+        onRequestTimeOff={() => setTimeOffModalOpen(true)}
       />
       <StatusLegend />
 
@@ -458,11 +471,17 @@ export default function DashboardCalendarPage() {
               hover && hover.barberId === barber.id
                 ? hover.startMinutes
                 : null;
+            const timeOffForDay = getApprovedTimeOff(
+              timeOffRequests,
+              barber.id,
+              selectedDate
+            );
             return (
               <BarberColumn
                 key={barber.id}
                 barber={barber}
                 appointments={barberAppts}
+                timeOff={timeOffForDay}
                 hoverMinutes={dragPreview ? null : hoverForThis}
                 nowTop={isToday ? nowTop : null}
                 now={isToday ? now : null}
@@ -535,6 +554,18 @@ export default function DashboardCalendarPage() {
           onCancel={handleMoveCancel}
         />
       )}
+
+      {timeOffModalOpen && isBarberView && (
+        <TimeOffRequestModal
+          barberId={viewAs as string}
+          defaultStartDate={dateToIsoDay(selectedDate)}
+          onClose={() => setTimeOffModalOpen(false)}
+          onSubmit={(input) => {
+            addTimeOff(input);
+            setTimeOffModalOpen(false);
+          }}
+        />
+      )}
     </main>
   );
 }
@@ -549,6 +580,7 @@ function Toolbar({
   onBarberChange,
   currentLocationId,
   isBarberView,
+  onRequestTimeOff,
 }: {
   dateLabel: string;
   isToday: boolean;
@@ -559,6 +591,7 @@ function Toolbar({
   onBarberChange: (id: string | "all") => void;
   currentLocationId: string;
   isBarberView: boolean;
+  onRequestTimeOff: () => void;
 }) {
   const locationBarbers = barbers.filter(
     (b) => b.locationId === currentLocationId
@@ -592,8 +625,16 @@ function Toolbar({
         </button>
       </div>
 
-      {!isBarberView && (
-        <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3">
+        {isBarberView ? (
+          <button
+            type="button"
+            onClick={onRequestTimeOff}
+            className="rounded-lg border border-ink-muted bg-ink px-3 py-2 text-sm text-bone-dim transition hover:border-accent hover:text-bone"
+          >
+            🏖️ Заявка за отсъствие
+          </button>
+        ) : (
           <select
             value={selectedBarberId}
             onChange={(e) => onBarberChange(e.target.value)}
@@ -608,8 +649,8 @@ function Toolbar({
               </option>
             ))}
           </select>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
@@ -693,6 +734,7 @@ function TimeAxis({
 function BarberColumn({
   barber,
   appointments,
+  timeOff,
   hoverMinutes,
   nowTop,
   now,
@@ -704,6 +746,7 @@ function BarberColumn({
 }: {
   barber: Barber;
   appointments: { appointment: Appointment; isDragging: boolean }[];
+  timeOff: TimeOffRequest | null;
   hoverMinutes: number | null;
   nowTop: number | null;
   now: Date | null;
@@ -738,6 +781,10 @@ function BarberColumn({
   }
 
   function handleMouseMove(e: React.MouseEvent<HTMLDivElement>) {
+    if (timeOff) {
+      onHoverChange(null);
+      return;
+    }
     const rect = e.currentTarget.getBoundingClientRect();
     const y = e.clientY - rect.top;
     const minutesFromStart = (y / ROW_HEIGHT) * 30;
@@ -755,6 +802,7 @@ function BarberColumn({
   }
 
   function handleClick() {
+    if (timeOff) return;
     if (hoverMinutes === null) return;
     onCreate(hoverMinutes);
   }
@@ -823,6 +871,38 @@ function BarberColumn({
             }
           />
         ))}
+
+        {timeOff && (
+          <div
+            className="pointer-events-none absolute inset-x-0 top-0 z-[10] flex items-center justify-center"
+            style={{
+              height: TOTAL_HEIGHT,
+              backgroundImage:
+                "repeating-linear-gradient(45deg, rgba(244,63,94,0.06) 0 8px, transparent 8px 16px)",
+              backgroundColor: "rgba(244,63,94,0.18)",
+            }}
+          >
+            <div className="rounded-2xl border border-rose-400/50 bg-ink/85 px-4 py-3 text-center shadow-xl">
+              <p className="font-display text-xl tracking-widest text-rose-300">
+                ОТСЪСТВА
+              </p>
+              <p className="mt-1 text-xs text-rose-200/80">
+                {TIME_OFF_REASON_LABEL[timeOff.reason]}
+              </p>
+              <p className="mt-1 text-[10px] text-rose-200/60">
+                {new Date(timeOff.startDate).toLocaleDateString("bg-BG", {
+                  day: "numeric",
+                  month: "short",
+                })}
+                {" – "}
+                {new Date(timeOff.endDate).toLocaleDateString("bg-BG", {
+                  day: "numeric",
+                  month: "short",
+                })}
+              </p>
+            </div>
+          </div>
+        )}
 
         {nowTop !== null && (
           <div
@@ -1448,6 +1528,130 @@ function ProductSaleSection({
         </div>
       )}
     </div>
+  );
+}
+
+function TimeOffRequestModal({
+  barberId,
+  defaultStartDate,
+  onClose,
+  onSubmit,
+}: {
+  barberId: string;
+  defaultStartDate: string;
+  onClose: () => void;
+  onSubmit: (input: {
+    barberId: string;
+    startDate: string;
+    endDate: string;
+    reason: TimeOffReason;
+    notes?: string;
+  }) => void;
+}) {
+  const barber = barbers.find((b) => b.id === barberId);
+  const [startDate, setStartDate] = useState(defaultStartDate);
+  const [endDate, setEndDate] = useState(defaultStartDate);
+  const [reason, setReason] = useState<TimeOffReason>("vacation");
+  const [notes, setNotes] = useState("");
+
+  const canSubmit = !!startDate && !!endDate && startDate <= endDate;
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!canSubmit) return;
+    onSubmit({
+      barberId,
+      startDate,
+      endDate,
+      reason,
+      notes: notes.trim() || undefined,
+    });
+  }
+
+  return (
+    <ModalShell onClose={onClose}>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h2 className="font-display text-2xl">🏖️ Заявка за отсъствие</h2>
+          <p className="mt-1 text-sm text-bone-dim">
+            {barber?.name} · Собственикът ще получи известие за одобрение
+          </p>
+        </div>
+        <CloseButton onClose={onClose} />
+      </div>
+
+      <form className="mt-5 space-y-3" onSubmit={handleSubmit}>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Field label="Дата от *">
+            <input
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              className="input"
+              required
+              autoFocus
+            />
+          </Field>
+          <Field label="Дата до *">
+            <input
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              min={startDate}
+              className="input"
+              required
+            />
+          </Field>
+        </div>
+
+        <Field label="Причина *">
+          <select
+            value={reason}
+            onChange={(e) => setReason(e.target.value as TimeOffReason)}
+            className="input"
+          >
+            <option value="vacation">Отпуска</option>
+            <option value="course">Курс / обучение</option>
+            <option value="sick">Болничен</option>
+            <option value="personal">Лична причина</option>
+            <option value="other">Друго</option>
+          </select>
+        </Field>
+
+        <Field label="Допълнително (по желание)">
+          <textarea
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            placeholder="напр. семинар в чужбина; ще предам клиентите на Иван..."
+            rows={3}
+            className="input resize-none"
+          />
+        </Field>
+
+        {!canSubmit && startDate && endDate && startDate > endDate && (
+          <p className="text-xs text-rose-400">
+            Крайната дата трябва да е след началната.
+          </p>
+        )}
+
+        <div className="flex items-center justify-end gap-3 pt-2">
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-full border border-bone-dim/30 px-5 py-2 text-sm text-bone-dim transition hover:border-bone hover:text-bone"
+          >
+            Отказ
+          </button>
+          <button
+            type="submit"
+            disabled={!canSubmit}
+            className="rounded-full bg-accent px-5 py-2 text-sm font-medium text-ink transition hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            Изпрати заявката
+          </button>
+        </div>
+      </form>
+    </ModalShell>
   );
 }
 
