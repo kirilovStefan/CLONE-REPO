@@ -11,19 +11,53 @@ import {
   type AppointmentStatus,
 } from "@/lib/mock-data";
 
-// 24-часов график; видимата височина се определя от родителя (flex-1)
 const START_HOUR = 0;
 const END_HOUR = 24;
-const ROW_HEIGHT = 32; // 30-минутен слот
+const ROW_HEIGHT = 32;
 const SLOTS_PER_HOUR = 2;
-const HOUR_HEIGHT = ROW_HEIGHT * SLOTS_PER_HOUR; // 64 px
+const HOUR_HEIGHT = ROW_HEIGHT * SLOTS_PER_HOUR;
 const TOTAL_HEIGHT = (END_HOUR - START_HOUR) * HOUR_HEIGHT;
 const HEADER_HEIGHT = 56;
 const TIME_AXIS_WIDTH = 64;
+const DRAG_THRESHOLD = 4;
 
+type AppointmentOverride = Partial<Appointment>;
 type HoverState = { barberId: string; startMinutes: number } | null;
 type NewModal = { barberId: string; startsAt: string } | null;
 type DetailsModal = { appointmentId: string } | null;
+
+type DragInfo = {
+  appointmentId: string;
+  mode: "move" | "resize";
+  startX: number;
+  startY: number;
+  hasMoved: boolean;
+  originalBarberId: string;
+  originalStartMinutes: number;
+  originalDurationMin: number;
+  clickOffsetWithinBlock: number;
+};
+
+type DragPreview = {
+  appointmentId: string;
+  barberId: string;
+  startMinutes: number;
+  durationMin: number;
+};
+
+type MoveConfirm = {
+  appointmentId: string;
+  fromBarberId: string;
+  fromStartMinutes: number;
+  fromDurationMin: number;
+  toBarberId: string;
+  toStartMinutes: number;
+};
+
+function applyOverride(a: Appointment, ov?: AppointmentOverride): Appointment {
+  if (!ov) return a;
+  return { ...a, ...ov };
+}
 
 export default function DashboardCalendarPage() {
   const [dayOffset, setDayOffset] = useState(0);
@@ -34,13 +68,18 @@ export default function DashboardCalendarPage() {
   const [customAppointments, setCustomAppointments] = useState<Appointment[]>(
     []
   );
-  const [statusOverrides, setStatusOverrides] = useState<
-    Record<string, AppointmentStatus>
+  const [overrides, setOverrides] = useState<
+    Record<string, AppointmentOverride>
   >({});
   const [hover, setHover] = useState<HoverState>(null);
   const [newModal, setNewModal] = useState<NewModal>(null);
   const [detailsModal, setDetailsModal] = useState<DetailsModal>(null);
+  const [dragPreview, setDragPreview] = useState<DragPreview | null>(null);
+  const [moveConfirm, setMoveConfirm] = useState<MoveConfirm | null>(null);
 
+  const dragRef = useRef<DragInfo | null>(null);
+  const dragPreviewRef = useRef<DragPreview | null>(null);
+  const justFinishedDragRef = useRef(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const lastScrolledRef = useRef<number | null>(null);
 
@@ -50,7 +89,6 @@ export default function DashboardCalendarPage() {
     return () => clearInterval(id);
   }, []);
 
-  // Авто-скрол при отваряне и при смяна на ден — само вътре в графика
   useEffect(() => {
     if (!containerRef.current || !now) return;
     if (lastScrolledRef.current === dayOffset) return;
@@ -63,6 +101,207 @@ export default function DashboardCalendarPage() {
     lastScrolledRef.current = dayOffset;
   }, [dayOffset, now]);
 
+  function setOverride(id: string, ov: AppointmentOverride) {
+    setOverrides((prev) => ({ ...prev, [id]: { ...prev[id], ...ov } }));
+  }
+
+  const allAppointments = useMemo(
+    () => [...todaysAppointments, ...customAppointments],
+    [customAppointments]
+  );
+
+  // Global drag listeners
+  useEffect(() => {
+    function onMouseMove(e: MouseEvent) {
+      if (!dragRef.current) return;
+      const d = dragRef.current;
+
+      const dx = e.clientX - d.startX;
+      const dy = e.clientY - d.startY;
+
+      if (!d.hasMoved && Math.abs(dx) + Math.abs(dy) < DRAG_THRESHOLD) return;
+      d.hasMoved = true;
+
+      if (d.mode === "resize") {
+        const deltaMin = (dy / ROW_HEIGHT) * 30;
+        const newEnd =
+          d.originalStartMinutes + d.originalDurationMin + deltaMin;
+        const snappedEnd = Math.round(newEnd / 15) * 15;
+        const newDuration = Math.max(
+          15,
+          Math.min(
+            snappedEnd - d.originalStartMinutes,
+            END_HOUR * 60 - d.originalStartMinutes
+          )
+        );
+        const preview: DragPreview = {
+          appointmentId: d.appointmentId,
+          barberId: d.originalBarberId,
+          startMinutes: d.originalStartMinutes,
+          durationMin: newDuration,
+        };
+        dragPreviewRef.current = preview;
+        setDragPreview(preview);
+      } else {
+        const el = document.elementFromPoint(e.clientX, e.clientY);
+        const columnEl = el?.closest(
+          "[data-barber-column]"
+        ) as HTMLElement | null;
+        if (!columnEl) return;
+        const barberId = columnEl.getAttribute("data-barber-column");
+        if (!barberId) return;
+
+        const rect = columnEl.getBoundingClientRect();
+        const yInColumn = e.clientY - rect.top - d.clickOffsetWithinBlock;
+        const newStartMin = (yInColumn / ROW_HEIGHT) * 30 + START_HOUR * 60;
+        const snapped = Math.round(newStartMin / 30) * 30;
+        const clamped = Math.max(
+          START_HOUR * 60,
+          Math.min(snapped, END_HOUR * 60 - d.originalDurationMin)
+        );
+        const preview: DragPreview = {
+          appointmentId: d.appointmentId,
+          barberId,
+          startMinutes: clamped,
+          durationMin: d.originalDurationMin,
+        };
+        dragPreviewRef.current = preview;
+        setDragPreview(preview);
+      }
+    }
+
+    function onMouseUp() {
+      if (!dragRef.current) return;
+      const d = dragRef.current;
+
+      if (!d.hasMoved) {
+        dragRef.current = null;
+        dragPreviewRef.current = null;
+        setDragPreview(null);
+        return;
+      }
+
+      justFinishedDragRef.current = true;
+      const preview = dragPreviewRef.current;
+
+      if (d.mode === "resize") {
+        if (preview && preview.durationMin !== d.originalDurationMin) {
+          setOverride(d.appointmentId, { durationMin: preview.durationMin });
+        }
+        setDragPreview(null);
+        dragPreviewRef.current = null;
+        dragRef.current = null;
+      } else {
+        if (
+          !preview ||
+          (preview.barberId === d.originalBarberId &&
+            preview.startMinutes === d.originalStartMinutes)
+        ) {
+          setDragPreview(null);
+          dragPreviewRef.current = null;
+          dragRef.current = null;
+          return;
+        }
+        setMoveConfirm({
+          appointmentId: d.appointmentId,
+          fromBarberId: d.originalBarberId,
+          fromStartMinutes: d.originalStartMinutes,
+          fromDurationMin: d.originalDurationMin,
+          toBarberId: preview.barberId,
+          toStartMinutes: preview.startMinutes,
+        });
+      }
+    }
+
+    document.addEventListener("mousemove", onMouseMove);
+    document.addEventListener("mouseup", onMouseUp);
+    return () => {
+      document.removeEventListener("mousemove", onMouseMove);
+      document.removeEventListener("mouseup", onMouseUp);
+    };
+  }, []);
+
+  function handleAppointmentMouseDown(
+    appointmentId: string,
+    mode: "move" | "resize",
+    e: React.MouseEvent
+  ) {
+    e.stopPropagation();
+    const baseAppt = allAppointments.find((a) => a.id === appointmentId);
+    if (!baseAppt) return;
+    const appt = applyOverride(baseAppt, overrides[appointmentId]);
+    const service = services.find((s) => s.id === appt.serviceId);
+    if (!service) return;
+
+    const startDate = new Date(appt.startsAt);
+    const startMin = startDate.getHours() * 60 + startDate.getMinutes();
+    const durationMin = appt.durationMin ?? service.durationMin;
+
+    const target = e.currentTarget as HTMLElement;
+    const columnEl = target.closest(
+      "[data-barber-column]"
+    ) as HTMLElement | null;
+    let clickOffsetWithinBlock = 0;
+    if (columnEl) {
+      const columnRect = columnEl.getBoundingClientRect();
+      const apptBlockTop = ((startMin - START_HOUR * 60) / 30) * ROW_HEIGHT;
+      clickOffsetWithinBlock =
+        e.clientY - columnRect.top - apptBlockTop;
+    }
+
+    dragRef.current = {
+      appointmentId,
+      mode,
+      startX: e.clientX,
+      startY: e.clientY,
+      hasMoved: false,
+      originalBarberId: appt.barberId,
+      originalStartMinutes: startMin,
+      originalDurationMin: durationMin,
+      clickOffsetWithinBlock,
+    };
+  }
+
+  function handleAppointmentClick(appointmentId: string) {
+    if (justFinishedDragRef.current) {
+      justFinishedDragRef.current = false;
+      return;
+    }
+    setDetailsModal({ appointmentId });
+  }
+
+  function handleMoveConfirm() {
+    if (!moveConfirm) return;
+    const newDate = new Date();
+    newDate.setDate(newDate.getDate() + dayOffset);
+    newDate.setHours(
+      Math.floor(moveConfirm.toStartMinutes / 60),
+      moveConfirm.toStartMinutes % 60,
+      0,
+      0
+    );
+    setOverride(moveConfirm.appointmentId, {
+      barberId: moveConfirm.toBarberId,
+      startsAt: newDate.toISOString(),
+    });
+    setMoveConfirm(null);
+    setDragPreview(null);
+    dragPreviewRef.current = null;
+    dragRef.current = null;
+  }
+
+  function handleMoveCancel() {
+    setMoveConfirm(null);
+    setDragPreview(null);
+    dragPreviewRef.current = null;
+    dragRef.current = null;
+  }
+
+  function handleStatusChange(id: string, status: AppointmentStatus) {
+    setOverride(id, { status });
+    setDetailsModal(null);
+  }
+
   const currentDate = useMemo(() => {
     const d = new Date();
     d.setDate(d.getDate() + dayOffset);
@@ -73,11 +312,6 @@ export default function DashboardCalendarPage() {
     if (selectedBarberId === "all") return barbers;
     return barbers.filter((b) => b.id === selectedBarberId);
   }, [selectedBarberId]);
-
-  const allAppointments = useMemo(
-    () => [...todaysAppointments, ...customAppointments],
-    [customAppointments]
-  );
 
   const isToday = dayOffset === 0;
   const dateLabel = currentDate.toLocaleDateString("bg-BG", {
@@ -96,16 +330,47 @@ export default function DashboardCalendarPage() {
     ? now.toLocaleTimeString("bg-BG", { hour: "2-digit", minute: "2-digit" })
     : "";
 
-  const detailsAppointment = detailsModal
+  const detailsBaseAppt = detailsModal
     ? allAppointments.find((a) => a.id === detailsModal.appointmentId) ?? null
     : null;
+  const detailsAppointment = detailsBaseAppt
+    ? applyOverride(detailsBaseAppt, overrides[detailsBaseAppt.id])
+    : null;
 
-  function handleStatusChange(
-    appointmentId: string,
-    newStatus: AppointmentStatus
-  ) {
-    setStatusOverrides((prev) => ({ ...prev, [appointmentId]: newStatus }));
-    setDetailsModal(null);
+  function getAppointmentsForBarber(
+    barberId: string
+  ): { appointment: Appointment; isDragging: boolean }[] {
+    if (!isToday) return [];
+    const result: { appointment: Appointment; isDragging: boolean }[] = [];
+    for (const a of allAppointments) {
+      if (dragPreview && dragPreview.appointmentId === a.id) {
+        if (dragPreview.barberId === barberId) {
+          const newDate = new Date();
+          newDate.setDate(newDate.getDate() + dayOffset);
+          newDate.setHours(
+            Math.floor(dragPreview.startMinutes / 60),
+            dragPreview.startMinutes % 60,
+            0,
+            0
+          );
+          result.push({
+            appointment: {
+              ...a,
+              barberId: dragPreview.barberId,
+              startsAt: newDate.toISOString(),
+              durationMin: dragPreview.durationMin,
+            },
+            isDragging: true,
+          });
+        }
+        continue;
+      }
+      const effective = applyOverride(a, overrides[a.id]);
+      if (effective.barberId === barberId) {
+        result.push({ appointment: effective, isDragging: false });
+      }
+    }
+    return result;
   }
 
   return (
@@ -121,7 +386,9 @@ export default function DashboardCalendarPage() {
 
       <div
         ref={containerRef}
-        className="mt-4 min-h-0 flex-1 overflow-auto rounded-2xl border border-ink-muted bg-ink-soft"
+        className={`mt-4 min-h-0 flex-1 overflow-auto rounded-2xl border border-ink-muted bg-ink-soft ${
+          dragRef.current ? "select-none" : ""
+        }`}
       >
         <div className="flex min-w-fit">
           <TimeAxis
@@ -130,18 +397,17 @@ export default function DashboardCalendarPage() {
             nowLabel={nowLabel}
           />
           {visibleBarbers.map((barber) => {
-            const barberAppts = isToday
-              ? allAppointments.filter((a) => a.barberId === barber.id)
-              : [];
+            const barberAppts = getAppointmentsForBarber(barber.id);
             const hoverForThis =
-              hover && hover.barberId === barber.id ? hover.startMinutes : null;
+              hover && hover.barberId === barber.id
+                ? hover.startMinutes
+                : null;
             return (
               <BarberColumn
                 key={barber.id}
                 barber={barber}
                 appointments={barberAppts}
-                overrides={statusOverrides}
-                hoverMinutes={hoverForThis}
+                hoverMinutes={dragPreview ? null : hoverForThis}
                 nowTop={isToday ? nowTop : null}
                 now={isToday ? now : null}
                 onHoverChange={(startMinutes) =>
@@ -163,9 +429,8 @@ export default function DashboardCalendarPage() {
                     startsAt: date.toISOString(),
                   });
                 }}
-                onAppointmentClick={(appointmentId) =>
-                  setDetailsModal({ appointmentId })
-                }
+                onAppointmentClick={handleAppointmentClick}
+                onAppointmentMouseDown={handleAppointmentMouseDown}
               />
             );
           })}
@@ -193,10 +458,21 @@ export default function DashboardCalendarPage() {
       {detailsAppointment && (
         <AppointmentDetailsModal
           appointment={detailsAppointment}
-          override={statusOverrides[detailsAppointment.id]}
           now={isToday ? now : null}
           onClose={() => setDetailsModal(null)}
           onStatusChange={handleStatusChange}
+        />
+      )}
+
+      {moveConfirm && (
+        <MoveConfirmModal
+          info={moveConfirm}
+          appointment={
+            allAppointments.find((a) => a.id === moveConfirm.appointmentId) ??
+            null
+          }
+          onConfirm={handleMoveConfirm}
+          onCancel={handleMoveCancel}
         />
       )}
     </main>
@@ -286,7 +562,7 @@ function StatusLegend() {
         Текущ час
       </span>
       <span className="ml-auto hidden text-bone-dim/70 md:inline">
-        💡 Цъкни празно поле за нов час · цъкни запазен час за детайли
+        💡 Влачи за преместване · долен край за смяна на времетраене
       </span>
     </div>
   );
@@ -342,23 +618,27 @@ function TimeAxis({
 function BarberColumn({
   barber,
   appointments,
-  overrides,
   hoverMinutes,
   nowTop,
   now,
   onHoverChange,
   onCreate,
   onAppointmentClick,
+  onAppointmentMouseDown,
 }: {
   barber: Barber;
-  appointments: Appointment[];
-  overrides: Record<string, AppointmentStatus>;
+  appointments: { appointment: Appointment; isDragging: boolean }[];
   hoverMinutes: number | null;
   nowTop: number | null;
   now: Date | null;
   onHoverChange: (startMinutes: number | null) => void;
   onCreate: (startMinutes: number) => void;
-  onAppointmentClick: (appointmentId: string) => void;
+  onAppointmentClick: (id: string) => void;
+  onAppointmentMouseDown: (
+    id: string,
+    mode: "move" | "resize",
+    e: React.MouseEvent
+  ) => void;
 }) {
   const initials = barber.name
     .split(" ")
@@ -369,12 +649,13 @@ function BarberColumn({
   const workEndPx = (barber.workEnd - START_HOUR) * HOUR_HEIGHT;
 
   function overlapsExisting(startMin: number): boolean {
-    return appointments.some((a) => {
+    return appointments.some(({ appointment: a }) => {
       const s = services.find((sv) => sv.id === a.serviceId);
       if (!s) return false;
       const d = new Date(a.startsAt);
       const aStart = d.getHours() * 60 + d.getMinutes();
-      const aEnd = aStart + s.durationMin;
+      const dur = a.durationMin ?? s.durationMin;
+      const aEnd = aStart + dur;
       return !(startMin + 60 <= aStart || startMin >= aEnd);
     });
   }
@@ -385,9 +666,6 @@ function BarberColumn({
     const minutesFromStart = (y / ROW_HEIGHT) * 30;
     const totalMin = START_HOUR * 60 + minutesFromStart;
     const snapped = Math.floor(totalMin / 30) * 30;
-
-    // Маркерът работи по целия график; пропускаме само ако пресича запазен час
-    // или излиза извън денонощието.
     if (snapped < START_HOUR * 60 || snapped + 60 > END_HOUR * 60) {
       onHoverChange(null);
       return;
@@ -423,6 +701,7 @@ function BarberColumn({
       </div>
 
       <div
+        data-barber-column={barber.id}
         className="relative cursor-pointer"
         style={{ height: TOTAL_HEIGHT }}
         onMouseMove={handleMouseMove}
@@ -454,13 +733,16 @@ function BarberColumn({
 
         {hoverMinutes !== null && <HoverMarker startMinutes={hoverMinutes} />}
 
-        {appointments.map((a) => (
+        {appointments.map(({ appointment, isDragging }) => (
           <AppointmentBlock
-            key={a.id}
-            appointment={a}
-            statusOverride={overrides[a.id]}
+            key={appointment.id}
+            appointment={appointment}
             now={now}
-            onClick={() => onAppointmentClick(a.id)}
+            isDragging={isDragging}
+            onClick={() => onAppointmentClick(appointment.id)}
+            onMouseDown={(mode, e) =>
+              onAppointmentMouseDown(appointment.id, mode, e)
+            }
           />
         ))}
 
@@ -486,11 +768,10 @@ function formatMinutesToTime(totalMin: number) {
 
 function HoverMarker({ startMinutes }: { startMinutes: number }) {
   const top = (startMinutes / 30) * ROW_HEIGHT;
-  const height = HOUR_HEIGHT;
   return (
     <div
       className="pointer-events-none absolute inset-x-1 z-[3] flex flex-col justify-center rounded-md border-2 border-dashed border-accent bg-accent/20 px-2 py-1 text-center text-[11px] font-medium text-accent"
-      style={{ top, height: height - 2 }}
+      style={{ top, height: HOUR_HEIGHT - 2 }}
     >
       <p>+ Нов час</p>
       <p className="opacity-80">
@@ -503,11 +784,9 @@ function HoverMarker({ startMinutes }: { startMinutes: number }) {
 
 function effectiveStatus(
   appointment: Appointment,
-  override: AppointmentStatus | undefined,
   durationMin: number,
   now: Date | null
 ): AppointmentStatus {
-  if (override) return override;
   if (
     appointment.status === "completed" ||
     appointment.status === "no-show" ||
@@ -524,52 +803,54 @@ function effectiveStatus(
 
 function AppointmentBlock({
   appointment,
-  statusOverride,
   now,
+  isDragging,
   onClick,
+  onMouseDown,
 }: {
   appointment: Appointment;
-  statusOverride: AppointmentStatus | undefined;
   now: Date | null;
+  isDragging: boolean;
   onClick: () => void;
+  onMouseDown: (mode: "move" | "resize", e: React.MouseEvent) => void;
 }) {
   const service = services.find((s) => s.id === appointment.serviceId);
   if (!service) return null;
 
+  const durationMin = appointment.durationMin ?? service.durationMin;
   const date = new Date(appointment.startsAt);
   const startMin = date.getHours() * 60 + date.getMinutes();
   const offsetMin = startMin - START_HOUR * 60;
   const top = (offsetMin / 30) * ROW_HEIGHT;
-  const height = (service.durationMin / 30) * ROW_HEIGHT;
+  const height = (durationMin / 30) * ROW_HEIGHT;
 
-  const status = effectiveStatus(
-    appointment,
-    statusOverride,
-    service.durationMin,
-    now
-  );
+  const status = effectiveStatus(appointment, durationMin, now);
   const colors = STATUS_COLOR_CLASSES[status];
   const startLabel = date.toLocaleTimeString("bg-BG", {
     hour: "2-digit",
     minute: "2-digit",
   });
-  const endDate = new Date(date.getTime() + service.durationMin * 60_000);
+  const endDate = new Date(date.getTime() + durationMin * 60_000);
   const endLabel = endDate.toLocaleTimeString("bg-BG", {
     hour: "2-digit",
     minute: "2-digit",
   });
 
   return (
-    <button
-      type="button"
+    <div
       style={{ top, height: height - 3 }}
+      onMouseDown={(e) => onMouseDown("move", e)}
       onClick={(e) => {
         e.stopPropagation();
         onClick();
       }}
       onMouseMove={(e) => e.stopPropagation()}
-      className={`absolute inset-x-1.5 z-[5] overflow-hidden rounded-lg border-l-[5px] px-2.5 py-1.5 text-left text-[11px] leading-tight shadow-md ring-1 ring-inset transition hover:scale-[1.02] hover:shadow-xl ${colors.bg} ${colors.border} ${colors.ring} ${
+      className={`absolute inset-x-1.5 z-[5] cursor-grab overflow-hidden rounded-lg border-l-[5px] px-2.5 py-1.5 text-left text-[11px] leading-tight shadow-md ring-1 ring-inset transition ${colors.bg} ${colors.border} ${colors.ring} ${
         status === "no-show" ? "opacity-75" : ""
+      } ${
+        isDragging
+          ? "scale-[1.03] cursor-grabbing opacity-90 shadow-2xl ring-2 ring-accent"
+          : "hover:scale-[1.02] hover:shadow-xl"
       }`}
       title={`${appointment.clientName} • ${service.name} • ${colors.label}${
         appointment.notes ? "\nБележка: " + appointment.notes : ""
@@ -594,7 +875,18 @@ function AppointmentBlock({
           📝 {appointment.notes}
         </p>
       )}
-    </button>
+      <div
+        onMouseDown={(e) => {
+          e.stopPropagation();
+          onMouseDown("resize", e);
+        }}
+        onClick={(e) => e.stopPropagation()}
+        className="group/handle absolute inset-x-0 bottom-0 flex h-2.5 cursor-ns-resize items-center justify-center"
+        title="Влачи за смяна на времетраене"
+      >
+        <span className="h-1 w-6 rounded-full bg-bone/20 group-hover/handle:bg-accent" />
+      </div>
+    </div>
   );
 }
 
@@ -663,7 +955,6 @@ function NewAppointmentModal({
         </div>
         <CloseButton onClose={onClose} />
       </div>
-
       <form className="mt-5 space-y-3" onSubmit={handleSubmit}>
         <div className="grid gap-3 sm:grid-cols-2">
           <Field label="Име *">
@@ -688,7 +979,6 @@ function NewAppointmentModal({
             />
           </Field>
         </div>
-
         <div className="grid gap-3 sm:grid-cols-2">
           <Field label="Телефон *">
             <input
@@ -710,7 +1000,6 @@ function NewAppointmentModal({
             />
           </Field>
         </div>
-
         <Field label="Услуга">
           <select
             value={serviceId}
@@ -724,17 +1013,15 @@ function NewAppointmentModal({
             ))}
           </select>
         </Field>
-
         <Field label="Бележка">
           <textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            placeholder="напр. ще закъснее с 10 мин; алергия към одеколон..."
+            placeholder="напр. ще закъснее с 10 мин..."
             rows={3}
             className="input resize-none"
           />
         </Field>
-
         <div className="flex items-center justify-end gap-3 pt-2">
           <button
             type="button"
@@ -758,25 +1045,19 @@ function NewAppointmentModal({
 
 function AppointmentDetailsModal({
   appointment,
-  override,
   now,
   onClose,
   onStatusChange,
 }: {
   appointment: Appointment;
-  override: AppointmentStatus | undefined;
   now: Date | null;
   onClose: () => void;
   onStatusChange: (id: string, status: AppointmentStatus) => void;
 }) {
   const service = services.find((s) => s.id === appointment.serviceId)!;
   const barber = barbers.find((b) => b.id === appointment.barberId)!;
-  const status = effectiveStatus(
-    appointment,
-    override,
-    service.durationMin,
-    now
-  );
+  const durationMin = appointment.durationMin ?? service.durationMin;
+  const status = effectiveStatus(appointment, durationMin, now);
   const colors = STATUS_COLOR_CLASSES[status];
 
   const startDate = new Date(appointment.startsAt);
@@ -785,7 +1066,7 @@ function AppointmentDetailsModal({
     minute: "2-digit",
   });
   const endLabel = new Date(
-    startDate.getTime() + service.durationMin * 60_000
+    startDate.getTime() + durationMin * 60_000
   ).toLocaleTimeString("bg-BG", { hour: "2-digit", minute: "2-digit" });
 
   const statusActions: {
@@ -834,14 +1115,16 @@ function AppointmentDetailsModal({
             {appointment.clientName}
           </h2>
           <p className="mt-1 text-sm text-bone-dim">
-            {startLabel}–{endLabel} · {barber.name}
+            {startLabel}–{endLabel} · {durationMin} мин · {barber.name}
           </p>
         </div>
         <CloseButton onClose={onClose} />
       </div>
-
       <dl className="mt-5 space-y-2 rounded-xl border border-ink-muted bg-ink/40 p-4 text-sm">
-        <InfoRow label="Услуга" value={`${service.name} (${service.price} лв)`} />
+        <InfoRow
+          label="Услуга"
+          value={`${service.name} (${service.price} лв)`}
+        />
         <InfoRow label="Телефон" value={appointment.clientPhone} />
         {appointment.clientEmail && (
           <InfoRow label="Имейл" value={appointment.clientEmail} />
@@ -850,7 +1133,6 @@ function AppointmentDetailsModal({
           <InfoRow label="Бележка" value={`📝 ${appointment.notes}`} />
         )}
       </dl>
-
       <div className="mt-5">
         <p className="text-xs uppercase tracking-widest text-bone-dim">
           Промени статуса
@@ -891,7 +1173,6 @@ function AppointmentDetailsModal({
           })}
         </div>
       </div>
-
       <div className="mt-6 flex justify-end">
         <button
           type="button"
@@ -899,6 +1180,82 @@ function AppointmentDetailsModal({
           className="rounded-full border border-bone-dim/30 px-5 py-2 text-sm text-bone-dim transition hover:border-bone hover:text-bone"
         >
           Затвори
+        </button>
+      </div>
+    </ModalShell>
+  );
+}
+
+function MoveConfirmModal({
+  info,
+  appointment,
+  onConfirm,
+  onCancel,
+}: {
+  info: MoveConfirm;
+  appointment: Appointment | null;
+  onConfirm: () => void;
+  onCancel: () => void;
+}) {
+  const fromBarber = barbers.find((b) => b.id === info.fromBarberId);
+  const toBarber = barbers.find((b) => b.id === info.toBarberId);
+  const fromTime = formatMinutesToTime(info.fromStartMinutes);
+  const fromEnd = formatMinutesToTime(
+    info.fromStartMinutes + info.fromDurationMin
+  );
+  const toTime = formatMinutesToTime(info.toStartMinutes);
+  const toEnd = formatMinutesToTime(
+    info.toStartMinutes + info.fromDurationMin
+  );
+
+  return (
+    <ModalShell onClose={onCancel}>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h2 className="font-display text-2xl">Преместване на час?</h2>
+          {appointment && (
+            <p className="mt-1 text-sm text-bone-dim">
+              {appointment.clientName}
+            </p>
+          )}
+        </div>
+        <CloseButton onClose={onCancel} />
+      </div>
+
+      <div className="mt-5 space-y-3">
+        <div className="rounded-xl border border-ink-muted bg-ink/40 p-4">
+          <p className="text-xs uppercase tracking-widest text-bone-dim">
+            От
+          </p>
+          <p className="mt-1 font-display text-lg">
+            {fromTime}–{fromEnd}
+          </p>
+          <p className="text-sm text-bone-dim">{fromBarber?.name}</p>
+        </div>
+        <div className="flex justify-center text-accent">↓</div>
+        <div className="rounded-xl border border-accent/60 bg-accent/10 p-4">
+          <p className="text-xs uppercase tracking-widest text-accent">На</p>
+          <p className="mt-1 font-display text-lg">
+            {toTime}–{toEnd}
+          </p>
+          <p className="text-sm text-bone-dim">{toBarber?.name}</p>
+        </div>
+      </div>
+
+      <div className="mt-6 flex items-center justify-end gap-3">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="rounded-full border border-bone-dim/30 px-5 py-2 text-sm text-bone-dim transition hover:border-bone hover:text-bone"
+        >
+          Отказ
+        </button>
+        <button
+          type="button"
+          onClick={onConfirm}
+          className="rounded-full bg-accent px-5 py-2 text-sm font-medium text-ink transition hover:bg-accent-hover"
+        >
+          Премести
         </button>
       </div>
     </ModalShell>

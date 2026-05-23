@@ -35,6 +35,7 @@ export type Appointment = {
   barberId: string;
   startsAt: string;
   status: AppointmentStatus;
+  durationMin?: number;
 };
 
 export const services: Service[] = [
