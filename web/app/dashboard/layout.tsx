@@ -4,25 +4,21 @@ import Link from "next/link";
 import { useState, type ReactNode } from "react";
 import { Sidebar } from "./Sidebar";
 import { CalendarProvider, useCalendar } from "@/lib/calendar-context";
-import { I18nProvider, useT, type Locale } from "@/lib/i18n";
-import { ThemeProvider } from "@/lib/theme-context";
+import { LanguageStrip, useT } from "@/lib/i18n";
 import { type TimeOffRequest } from "@/lib/mock-data";
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   return (
-    <ThemeProvider>
-      <I18nProvider>
-        <CalendarProvider>
-          <div className="flex h-screen overflow-hidden bg-ink">
-            <Sidebar />
-            <div className="flex min-w-0 flex-1 flex-col">
-              <TopBar />
-              <div className="flex-1 overflow-hidden">{children}</div>
-            </div>
-          </div>
-        </CalendarProvider>
-      </I18nProvider>
-    </ThemeProvider>
+    <CalendarProvider>
+      <div className="flex h-screen overflow-hidden bg-ink">
+        <Sidebar />
+        <div className="flex min-w-0 flex-1 flex-col">
+          <TopBar />
+          <LanguageStrip />
+          <div className="flex-1 overflow-hidden">{children}</div>
+        </div>
+      </div>
+    </CalendarProvider>
   );
 }
 
@@ -30,7 +26,6 @@ function TopBar() {
   const { t } = useT();
   return (
     <header className="relative z-40 flex shrink-0 items-center justify-end gap-3 border-b border-ink-muted/40 bg-ink/95 px-6 py-2.5 backdrop-blur">
-      <LanguageSwitcher />
       <NotificationBell />
       <ViewAsSelector />
       <span className="text-bone-dim/30">·</span>
@@ -49,59 +44,6 @@ function TopBar() {
       </Link>
       <UserAvatar />
     </header>
-  );
-}
-
-function LanguageSwitcher() {
-  const { locale, setLocale, t } = useT();
-  const [open, setOpen] = useState(false);
-
-  const languages: { code: Locale; flag: string; label: string }[] = [
-    { code: "bg", flag: "🇧🇬", label: t("lang.bg") },
-    { code: "en", flag: "🇬🇧", label: t("lang.en") },
-  ];
-  const current = languages.find((l) => l.code === locale) ?? languages[0];
-
-  return (
-    <div className="relative">
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        onBlur={() => setTimeout(() => setOpen(false), 200)}
-        className="flex items-center gap-1.5 rounded-lg border border-ink-muted/60 px-2.5 py-1.5 text-sm transition hover:border-accent"
-        title={t("lang.label")}
-      >
-        <span>{current.flag}</span>
-        <span className="font-medium uppercase">{current.code}</span>
-        <span className="text-bone-dim">▾</span>
-      </button>
-
-      {open && (
-        <div className="absolute right-0 top-full z-50 mt-1 w-44 overflow-hidden rounded-xl border border-ink-muted bg-ink-soft shadow-2xl">
-          {languages.map((lang) => {
-            const isActive = lang.code === locale;
-            return (
-              <button
-                key={lang.code}
-                type="button"
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  setLocale(lang.code);
-                  setOpen(false);
-                }}
-                className={`flex w-full items-center gap-3 px-3 py-2.5 text-left transition hover:bg-ink-muted/40 ${
-                  isActive ? "bg-accent/10" : ""
-                }`}
-              >
-                <span className="text-lg">{lang.flag}</span>
-                <span className="flex-1 text-sm">{lang.label}</span>
-                {isActive && <span className="text-accent">✓</span>}
-              </button>
-            );
-          })}
-        </div>
-      )}
-    </div>
   );
 }
 

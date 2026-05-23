@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { services, barbers, type Service, type Barber } from "@/lib/mock-data";
+import { LanguageStrip } from "@/lib/i18n";
 
 type Step = 1 | 2 | 3 | 4 | 5 | 6;
 
@@ -56,6 +57,7 @@ export default function BookPage() {
   return (
     <main className="min-h-screen">
       <TopBar />
+      <LanguageStrip />
       <div className="mx-auto max-w-3xl px-6 py-10">
         <Progress step={step} />
 

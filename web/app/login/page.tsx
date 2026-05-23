@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { LanguageStrip } from "@/lib/i18n";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -40,6 +41,8 @@ export default function LoginPage() {
           </Link>
         </div>
       </header>
+
+      <LanguageStrip />
 
       <section className="flex items-center justify-center px-6 py-16 md:py-24">
         <div className="w-full max-w-md">
