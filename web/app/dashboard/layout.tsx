@@ -22,7 +22,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
 function TopBar() {
   return (
-    <header className="flex shrink-0 items-center justify-end gap-3 border-b border-ink-muted/40 bg-ink/95 px-6 py-2.5 backdrop-blur">
+    <header className="relative z-40 flex shrink-0 items-center justify-end gap-3 border-b border-ink-muted/40 bg-ink/95 px-6 py-2.5 backdrop-blur">
       <ViewAsSelector />
       <span className="text-bone-dim/30">·</span>
       <Link
