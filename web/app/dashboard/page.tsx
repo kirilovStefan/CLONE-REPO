@@ -13,7 +13,12 @@ import {
   type ProductSale,
 } from "@/lib/mock-data";
 import { loadSales, saveSales } from "@/lib/sales-store";
-import { useCalendar, isSameDay, startOfDay } from "@/lib/calendar-context";
+import {
+  useCalendar,
+  isSameDay,
+  startOfDay,
+  maskClientName,
+} from "@/lib/calendar-context";
 
 const START_HOUR = 0;
 const END_HOUR = 24;
@@ -64,9 +69,11 @@ function applyOverride(a: Appointment, ov?: AppointmentOverride): Appointment {
 }
 
 export default function DashboardCalendarPage() {
-  const { selectedDate, setSelectedDate } = useCalendar();
+  const { selectedDate, setSelectedDate, currentLocationId, viewAs } =
+    useCalendar();
   const today = useMemo(() => startOfDay(new Date()), []);
   const isToday = isSameDay(selectedDate, today);
+  const isBarberView = viewAs !== "owner";
   const [selectedBarberId, setSelectedBarberId] = useState<string | "all">(
     "all"
   );
@@ -342,9 +349,17 @@ export default function DashboardCalendarPage() {
   }
 
   const visibleBarbers = useMemo(() => {
-    if (selectedBarberId === "all") return barbers;
-    return barbers.filter((b) => b.id === selectedBarberId);
-  }, [selectedBarberId]);
+    const locationBarbers = barbers.filter(
+      (b) => b.locationId === currentLocationId
+    );
+    if (isBarberView) {
+      return locationBarbers.filter((b) => b.id === viewAs);
+    }
+    if (selectedBarberId !== "all") {
+      return locationBarbers.filter((b) => b.id === selectedBarberId);
+    }
+    return locationBarbers;
+  }, [currentLocationId, isBarberView, viewAs, selectedBarberId]);
 
   const dateLabel = selectedDate.toLocaleDateString("bg-BG", {
     weekday: "long",
@@ -420,6 +435,8 @@ export default function DashboardCalendarPage() {
         onJumpToToday={() => setSelectedDate(today)}
         selectedBarberId={selectedBarberId}
         onBarberChange={setSelectedBarberId}
+        currentLocationId={currentLocationId}
+        isBarberView={isBarberView}
       />
       <StatusLegend />
 
@@ -449,6 +466,7 @@ export default function DashboardCalendarPage() {
                 hoverMinutes={dragPreview ? null : hoverForThis}
                 nowTop={isToday ? nowTop : null}
                 now={isToday ? now : null}
+                isBarberView={isBarberView}
                 onHoverChange={(startMinutes) =>
                   startMinutes === null
                     ? setHover(null)
@@ -480,6 +498,7 @@ export default function DashboardCalendarPage() {
         <NewAppointmentModal
           barberId={newModal.barberId}
           startsAt={newModal.startsAt}
+          isBarberView={isBarberView}
           onClose={() => setNewModal(null)}
           onSave={(appt) => {
             setCustomAppointments((prev) => [...prev, appt]);
@@ -492,6 +511,7 @@ export default function DashboardCalendarPage() {
         <AppointmentDetailsModal
           appointment={detailsAppointment}
           now={isToday ? now : null}
+          isBarberView={isBarberView}
           sales={productSales.filter(
             (s) => s.appointmentId === detailsAppointment.id
           )}
@@ -527,6 +547,8 @@ function Toolbar({
   onJumpToToday,
   selectedBarberId,
   onBarberChange,
+  currentLocationId,
+  isBarberView,
 }: {
   dateLabel: string;
   isToday: boolean;
@@ -535,7 +557,12 @@ function Toolbar({
   onJumpToToday: () => void;
   selectedBarberId: string | "all";
   onBarberChange: (id: string | "all") => void;
+  currentLocationId: string;
+  isBarberView: boolean;
 }) {
+  const locationBarbers = barbers.filter(
+    (b) => b.locationId === currentLocationId
+  );
   return (
     <div className="flex shrink-0 flex-wrap items-center justify-between gap-3">
       <div className="flex items-center gap-2">
@@ -565,20 +592,24 @@ function Toolbar({
         </button>
       </div>
 
-      <div className="flex items-center gap-3">
-        <select
-          value={selectedBarberId}
-          onChange={(e) => onBarberChange(e.target.value)}
-          className="rounded-lg border border-ink-muted bg-ink px-3 py-2 text-sm text-bone focus:border-accent focus:outline-none"
-        >
-          <option value="all">Всички бръснари ({barbers.length})</option>
-          {barbers.map((b) => (
-            <option key={b.id} value={b.id}>
-              {b.name}
+      {!isBarberView && (
+        <div className="flex items-center gap-3">
+          <select
+            value={selectedBarberId}
+            onChange={(e) => onBarberChange(e.target.value)}
+            className="rounded-lg border border-ink-muted bg-ink px-3 py-2 text-sm text-bone focus:border-accent focus:outline-none"
+          >
+            <option value="all">
+              Всички бръснари ({locationBarbers.length})
             </option>
-          ))}
-        </select>
-      </div>
+            {locationBarbers.map((b) => (
+              <option key={b.id} value={b.id}>
+                {b.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
     </div>
   );
 }
@@ -665,6 +696,7 @@ function BarberColumn({
   hoverMinutes,
   nowTop,
   now,
+  isBarberView,
   onHoverChange,
   onCreate,
   onAppointmentClick,
@@ -675,6 +707,7 @@ function BarberColumn({
   hoverMinutes: number | null;
   nowTop: number | null;
   now: Date | null;
+  isBarberView: boolean;
   onHoverChange: (startMinutes: number | null) => void;
   onCreate: (startMinutes: number) => void;
   onAppointmentClick: (id: string) => void;
@@ -783,6 +816,7 @@ function BarberColumn({
             appointment={appointment}
             now={now}
             isDragging={isDragging}
+            isBarberView={isBarberView}
             onClick={() => onAppointmentClick(appointment.id)}
             onMouseDown={(mode, e) =>
               onAppointmentMouseDown(appointment.id, mode, e)
@@ -849,12 +883,14 @@ function AppointmentBlock({
   appointment,
   now,
   isDragging,
+  isBarberView,
   onClick,
   onMouseDown,
 }: {
   appointment: Appointment;
   now: Date | null;
   isDragging: boolean;
+  isBarberView: boolean;
   onClick: () => void;
   onMouseDown: (mode: "move" | "resize", e: React.MouseEvent) => void;
 }) {
@@ -911,10 +947,10 @@ function AppointmentBlock({
           status === "no-show" ? "line-through" : ""
         }`}
       >
-        {appointment.clientName}
+        {isBarberView ? maskClientName(appointment.clientName) : appointment.clientName}
       </p>
       <p className="truncate text-bone/85">{service.name}</p>
-      {appointment.notes && (
+      {!isBarberView && appointment.notes && (
         <p className="mt-0.5 truncate text-[10px] italic text-bone-dim">
           📝 {appointment.notes}
         </p>
@@ -937,11 +973,13 @@ function AppointmentBlock({
 function NewAppointmentModal({
   barberId,
   startsAt,
+  isBarberView,
   onClose,
   onSave,
 }: {
   barberId: string;
   startsAt: string;
+  isBarberView: boolean;
   onClose: () => void;
   onSave: (a: Appointment) => void;
 }) {
@@ -968,7 +1006,8 @@ function NewAppointmentModal({
       })
     : "";
 
-  const canSave = firstName.trim() && lastName.trim() && phone.trim();
+  const canSave =
+    firstName.trim() && lastName.trim() && (isBarberView || phone.trim());
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -984,6 +1023,11 @@ function NewAppointmentModal({
       startsAt,
       status: "confirmed",
     };
+    if (isBarberView) {
+      appt.clientPhone = "";
+      appt.clientEmail = undefined;
+      appt.notes = undefined;
+    }
     onSave(appt);
   }
 
@@ -1023,27 +1067,29 @@ function NewAppointmentModal({
             />
           </Field>
         </div>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <Field label="Телефон *">
-            <input
-              type="tel"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder="+359 88 123 4567"
-              className="input"
-              required
-            />
-          </Field>
-          <Field label="Имейл">
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="ivan@example.com"
-              className="input"
-            />
-          </Field>
-        </div>
+        {!isBarberView && (
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Field label="Телефон *">
+              <input
+                type="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="+359 88 123 4567"
+                className="input"
+                required
+              />
+            </Field>
+            <Field label="Имейл">
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="ivan@example.com"
+                className="input"
+              />
+            </Field>
+          </div>
+        )}
         <Field label="Услуга">
           <select
             value={serviceId}
@@ -1057,15 +1103,23 @@ function NewAppointmentModal({
             ))}
           </select>
         </Field>
-        <Field label="Бележка">
-          <textarea
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            placeholder="напр. ще закъснее с 10 мин..."
-            rows={3}
-            className="input resize-none"
-          />
-        </Field>
+        {!isBarberView && (
+          <Field label="Бележка">
+            <textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="напр. ще закъснее с 10 мин..."
+              rows={3}
+              className="input resize-none"
+            />
+          </Field>
+        )}
+        {isBarberView && (
+          <p className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 px-3 py-2 text-[11px] text-emerald-200/80">
+            Като бръснар събираш само име на клиента. Собственикът може да
+            допълни телефон и имейл по-късно.
+          </p>
+        )}
         <div className="flex items-center justify-end gap-3 pt-2">
           <button
             type="button"
@@ -1090,6 +1144,7 @@ function NewAppointmentModal({
 function AppointmentDetailsModal({
   appointment,
   now,
+  isBarberView,
   sales,
   onClose,
   onStatusChange,
@@ -1098,6 +1153,7 @@ function AppointmentDetailsModal({
 }: {
   appointment: Appointment;
   now: Date | null;
+  isBarberView: boolean;
   sales: ProductSale[];
   onClose: () => void;
   onStatusChange: (id: string, status: AppointmentStatus) => void;
@@ -1162,7 +1218,9 @@ function AppointmentDetailsModal({
             {colors.label}
           </span>
           <h2 className="mt-2 font-display text-2xl">
-            {appointment.clientName}
+            {isBarberView
+              ? maskClientName(appointment.clientName)
+              : appointment.clientName}
           </h2>
           <p className="mt-1 text-sm text-bone-dim">
             {startLabel}–{endLabel} · {durationMin} мин · {barber.name}
@@ -1175,12 +1233,19 @@ function AppointmentDetailsModal({
           label="Услуга"
           value={`${service.name} (${service.price} лв)`}
         />
-        <InfoRow label="Телефон" value={appointment.clientPhone} />
-        {appointment.clientEmail && (
+        {!isBarberView && (
+          <InfoRow label="Телефон" value={appointment.clientPhone} />
+        )}
+        {!isBarberView && appointment.clientEmail && (
           <InfoRow label="Имейл" value={appointment.clientEmail} />
         )}
-        {appointment.notes && (
+        {!isBarberView && appointment.notes && (
           <InfoRow label="Бележка" value={`📝 ${appointment.notes}`} />
+        )}
+        {isBarberView && (
+          <p className="text-[11px] italic text-bone-dim/70">
+            🔒 Лични данни на клиента се виждат само от собственика
+          </p>
         )}
       </dl>
       <div className="mt-5">
@@ -1223,11 +1288,13 @@ function AppointmentDetailsModal({
           })}
         </div>
       </div>
-      <ProductSaleSection
-        sales={sales}
-        onSell={onSellProduct}
-        onRemove={onRemoveSale}
-      />
+      {!isBarberView && (
+        <ProductSaleSection
+          sales={sales}
+          onSell={onSellProduct}
+          onRemove={onRemoveSale}
+        />
+      )}
 
       <div className="mt-6 flex justify-end">
         <button

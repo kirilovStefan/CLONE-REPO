@@ -6,6 +6,12 @@ export type Service = {
   price: number;
 };
 
+export type Location = {
+  id: string;
+  name: string;
+  address: string;
+};
+
 export type Barber = {
   id: string;
   name: string;
@@ -13,10 +19,16 @@ export type Barber = {
   rating: number;
   reviewsCount: number;
   specialties: string[];
-  // Работно време в часове (0-24, поддържа полу-часове напр. 9.5)
   workStart: number;
   workEnd: number;
+  locationId: string;
 };
+
+export const locations: Location[] = [
+  { id: "loc-center", name: "Център", address: "ул. Витоша 12" },
+  { id: "loc-mladost", name: "Младост", address: "бул. Цариградско шосе 87" },
+  { id: "loc-paradise", name: "Парадайс", address: "бул. Черни връх 25" },
+];
 
 export type AppointmentStatus =
   | "confirmed"
@@ -129,6 +141,7 @@ export const barbers: Barber[] = [
     specialties: ["Fade", "Брада", "Класика"],
     workStart: 9,
     workEnd: 18,
+    locationId: "loc-center",
   },
   {
     id: "br-georgi",
@@ -139,6 +152,7 @@ export const barbers: Barber[] = [
     specialties: ["Скин фейд", "Дизайн", "Hot towel"],
     workStart: 10,
     workEnd: 19,
+    locationId: "loc-center",
   },
   {
     id: "br-martin",
@@ -149,6 +163,7 @@ export const barbers: Barber[] = [
     specialties: ["Детски", "Класика"],
     workStart: 11,
     workEnd: 17,
+    locationId: "loc-mladost",
   },
   {
     id: "br-dimo",
@@ -159,6 +174,7 @@ export const barbers: Barber[] = [
     specialties: ["Брада", "Класика"],
     workStart: 8,
     workEnd: 16,
+    locationId: "loc-mladost",
   },
   {
     id: "br-nikola",
@@ -169,6 +185,7 @@ export const barbers: Barber[] = [
     specialties: ["Fade", "Дизайн"],
     workStart: 14,
     workEnd: 22,
+    locationId: "loc-paradise",
   },
   {
     id: "br-aleks",
@@ -179,6 +196,7 @@ export const barbers: Barber[] = [
     specialties: ["Hot towel", "Брада", "Класика"],
     workStart: 9,
     workEnd: 18,
+    locationId: "loc-paradise",
   },
 ];
 

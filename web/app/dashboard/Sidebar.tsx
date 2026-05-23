@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useMemo, useState } from "react";
 import { useCalendar, isSameDay, startOfDay } from "@/lib/calendar-context";
+import { locations } from "@/lib/mock-data";
 
 type Item = {
   href: string;
@@ -36,23 +37,84 @@ export function Sidebar() {
 }
 
 function BusinessHeader() {
+  const { currentLocationId, setCurrentLocationId } = useCalendar();
+  const [open, setOpen] = useState(false);
+  const location = locations.find((l) => l.id === currentLocationId);
+
   return (
-    <div className="flex items-center gap-3 border-b border-ink-muted/30 px-4 py-4">
+    <div className="relative border-b border-ink-muted/30">
       <button
         type="button"
-        title="Качи лого"
-        className="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-accent text-ink font-display text-xl font-bold transition hover:bg-accent-hover"
+        onClick={() => setOpen((v) => !v)}
+        onBlur={() => setTimeout(() => setOpen(false), 200)}
+        className="flex w-full items-center gap-3 px-4 py-4 text-left transition hover:bg-ink-muted/20"
       >
-        B
+        <span
+          className="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-accent font-display text-xl font-bold text-ink"
+          title="Качи лого (скоро)"
+        >
+          B
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="truncate font-display text-base leading-tight">
+            My Barbershop
+          </p>
+          <p className="truncate text-[10px] uppercase tracking-widest text-bone-dim">
+            📍 {location?.name ?? "Изберете локация"}
+          </p>
+        </div>
+        <span className="text-bone-dim">▾</span>
       </button>
-      <div className="min-w-0">
-        <p className="truncate font-display text-base leading-tight">
-          My Barbershop
-        </p>
-        <p className="truncate text-[10px] uppercase tracking-widest text-bone-dim">
-          Демо акаунт
-        </p>
-      </div>
+
+      {open && (
+        <div className="absolute inset-x-3 top-full z-30 mt-1 rounded-xl border border-ink-muted bg-ink-soft shadow-2xl">
+          <div className="border-b border-ink-muted/30 px-3 py-2 text-[10px] uppercase tracking-widest text-bone-dim">
+            Локации
+          </div>
+          {locations.map((loc) => {
+            const isActive = loc.id === currentLocationId;
+            return (
+              <button
+                key={loc.id}
+                type="button"
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  setCurrentLocationId(loc.id);
+                  setOpen(false);
+                }}
+                className={`flex w-full items-start gap-3 px-3 py-2.5 text-left transition hover:bg-ink-muted/40 ${
+                  isActive ? "bg-accent/10" : ""
+                }`}
+              >
+                <span className="grid h-8 w-8 shrink-0 place-items-center rounded-md bg-ink-muted/60 text-xs font-medium text-bone-dim">
+                  {loc.name[0]}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium">{loc.name}</p>
+                  <p className="truncate text-[10px] text-bone-dim">
+                    {loc.address}
+                  </p>
+                </div>
+                {isActive && <span className="text-accent">✓</span>}
+              </button>
+            );
+          })}
+          <button
+            type="button"
+            onMouseDown={(e) => {
+              e.preventDefault();
+              alert("Скоро: добавяне на нова локация");
+              setOpen(false);
+            }}
+            className="flex w-full items-center gap-3 rounded-b-xl border-t border-ink-muted/40 px-3 py-2.5 text-left text-sm text-bone-dim transition hover:bg-ink-muted/40 hover:text-accent"
+          >
+            <span className="grid h-8 w-8 place-items-center rounded-md bg-ink-muted/30 text-bone-dim">
+              +
+            </span>
+            Добави нова локация
+          </button>
+        </div>
+      )}
     </div>
   );
 }

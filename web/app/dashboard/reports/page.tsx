@@ -6,9 +6,11 @@ import {
   barbers,
   todaysAppointments,
   products,
+  locations,
   type ProductSale,
 } from "@/lib/mock-data";
 import { loadSales } from "@/lib/sales-store";
+import { useCalendar } from "@/lib/calendar-context";
 
 function generateLast14Days() {
   const data: { label: string; appointments: number; revenue: number }[] = [];
@@ -28,7 +30,10 @@ function generateLast14Days() {
 }
 
 export default function ReportsPage() {
+  const { currentLocationId, viewAs } = useCalendar();
   const [sales, setSales] = useState<ProductSale[]>([]);
+  const isBarberView = viewAs !== "owner";
+  const currentLocation = locations.find((l) => l.id === currentLocationId);
 
   useEffect(() => {
     setSales(loadSales());
@@ -39,6 +44,23 @@ export default function ReportsPage() {
     return () => window.removeEventListener("storage", onStorage);
   }, []);
 
+  const locationBarbers = barbers.filter(
+    (b) => b.locationId === currentLocationId
+  );
+  const locationBarberIds = new Set(locationBarbers.map((b) => b.id));
+  const locationAppointments = todaysAppointments.filter((a) =>
+    locationBarberIds.has(a.barberId)
+  );
+
+  const visibleBarbers = isBarberView
+    ? locationBarbers.filter((b) => b.id === viewAs)
+    : locationBarbers;
+  const visibleBarberIds = new Set(visibleBarbers.map((b) => b.id));
+  const visibleAppointments = locationAppointments.filter((a) =>
+    visibleBarberIds.has(a.barberId)
+  );
+  const visibleSales = sales.filter((s) => visibleBarberIds.has(s.barberId));
+
   const chartData = generateLast14Days();
   const totalAppts = chartData.reduce((sum, d) => sum + d.appointments, 0);
   const totalRevenue = chartData.reduce((sum, d) => sum + d.revenue, 0);
@@ -46,19 +68,19 @@ export default function ReportsPage() {
 
   const serviceCounts = services.map((s) => ({
     service: s,
-    count: todaysAppointments.filter((a) => a.serviceId === s.id).length,
+    count: visibleAppointments.filter((a) => a.serviceId === s.id).length,
   }));
   serviceCounts.sort((a, b) => b.count - a.count);
   const maxServiceCount = Math.max(...serviceCounts.map((s) => s.count));
 
-  const barberLoad = barbers.map((b) => {
-    const apptRevenue = todaysAppointments
+  const barberLoad = visibleBarbers.map((b) => {
+    const apptRevenue = visibleAppointments
       .filter((a) => a.barberId === b.id)
       .reduce((sum, a) => {
         const s = services.find((sv) => sv.id === a.serviceId);
         return sum + (s?.price ?? 0);
       }, 0);
-    const barberSales = sales.filter((s) => s.barberId === b.id);
+    const barberSales = visibleSales.filter((s) => s.barberId === b.id);
     const productRevenue = barberSales.reduce((sum, s) => sum + s.price, 0);
     const productCommission = barberSales.reduce(
       (sum, s) => sum + (s.price * s.commissionPct) / 100,
@@ -66,7 +88,7 @@ export default function ReportsPage() {
     );
     return {
       barber: b,
-      count: todaysAppointments.filter((a) => a.barberId === b.id).length,
+      count: visibleAppointments.filter((a) => a.barberId === b.id).length,
       apptRevenue,
       productRevenue,
       productCommission,
@@ -77,7 +99,7 @@ export default function ReportsPage() {
   barberLoad.sort((a, b) => b.total - a.total);
 
   // Top sold products today (aggregated)
-  const productSummary = sales.reduce<
+  const productSummary = visibleSales.reduce<
     Record<string, { count: number; revenue: number }>
   >((acc, s) => {
     if (!acc[s.productId]) acc[s.productId] = { count: 0, revenue: 0 };
@@ -95,8 +117,8 @@ export default function ReportsPage() {
     .sort((a, b) => b.revenue - a.revenue)
     .slice(0, 6);
 
-  const totalProductRevenue = sales.reduce((sum, s) => sum + s.price, 0);
-  const totalProductCommission = sales.reduce(
+  const totalProductRevenue = visibleSales.reduce((sum, s) => sum + s.price, 0);
+  const totalProductCommission = visibleSales.reduce(
     (sum, s) => sum + (s.price * s.commissionPct) / 100,
     0
   );
@@ -106,7 +128,9 @@ export default function ReportsPage() {
       <div>
         <h1 className="font-display text-2xl md:text-3xl">Отчети</h1>
         <p className="mt-1 text-sm text-bone-dim">
-          Преглед на бизнеса за последните 14 дни.
+          {isBarberView
+            ? `Личен преглед — ${visibleBarbers[0]?.name ?? ""}`
+            : `Преглед за локация ${currentLocation?.name ?? ""}`}
         </p>
       </div>
 
