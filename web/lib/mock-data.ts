@@ -29,6 +29,8 @@ export type Appointment = {
   id: string;
   clientName: string;
   clientPhone: string;
+  clientEmail?: string;
+  notes?: string;
   serviceId: string;
   barberId: string;
   startsAt: string;

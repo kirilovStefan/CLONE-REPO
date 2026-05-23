@@ -22,7 +22,7 @@ function TopBar() {
           Barbershop
         </span>
         <span className="text-bone-dim">/</span>
-        <span className="font-display text-base">Barberly Demo</span>
+        <span className="font-display text-base">BarberOS Demo</span>
       </div>
       <div className="flex items-center gap-3">
         <Link

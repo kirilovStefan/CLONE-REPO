@@ -32,7 +32,7 @@ function Nav() {
           <span className="grid h-8 w-8 place-items-center rounded-full bg-accent text-ink font-display text-lg font-bold">
             B
           </span>
-          <span className="font-display text-xl tracking-wide">Barberly</span>
+          <span className="font-display text-xl tracking-wide">BarberOS</span>
         </a>
         <div className="hidden gap-8 text-sm text-bone-dim md:flex">
           <a href="#features" className="hover:text-bone">Функции</a>
@@ -65,7 +65,7 @@ function Hero() {
             <span className="text-accent">опростено.</span>
           </h1>
           <p className="mt-6 max-w-lg text-lg text-bone-dim">
-            Barberly е платформа специално за бръснари — онлайн записване,
+            BarberOS е operating system за твоя салон — онлайн записване,
             график, услуги и клиенти на едно място. Уеб + мобилно приложение.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
@@ -85,7 +85,7 @@ function Hero() {
           <div className="mt-10 flex items-center gap-6 text-sm text-bone-dim">
             <span>★ 4.9 средна оценка</span>
             <span className="h-1 w-1 rounded-full bg-bone-dim/50" />
-            <span>+200 салона ползват Barberly</span>
+            <span>+200 салона ползват BarberOS</span>
           </div>
         </div>
 
@@ -421,7 +421,7 @@ function Footer() {
   return (
     <footer className="border-t border-ink-muted/40 py-10">
       <div className="mx-auto flex max-w-6xl flex-col items-start justify-between gap-4 px-6 text-sm text-bone-dim md:flex-row md:items-center">
-        <p>© {new Date().getFullYear()} Barberly. Всички права запазени.</p>
+        <p>© {new Date().getFullYear()} BarberOS. Всички права запазени.</p>
         <div className="flex gap-6">
           <a href="#" className="hover:text-bone">Условия</a>
           <a href="#" className="hover:text-bone">Поверителност</a>

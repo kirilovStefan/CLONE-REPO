@@ -30,7 +30,7 @@ export function Sidebar() {
         <span className="grid h-8 w-8 place-items-center rounded-full bg-accent font-display text-lg font-bold text-ink">
           B
         </span>
-        <span className="font-display text-lg tracking-wide">Barberly</span>
+        <span className="font-display text-lg tracking-wide">BarberOS</span>
       </div>
 
       <nav className="flex-1 space-y-1 px-3">

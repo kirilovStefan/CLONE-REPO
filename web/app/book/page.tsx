@@ -115,7 +115,7 @@ function TopBar() {
           <span className="grid h-8 w-8 place-items-center rounded-full bg-accent font-display text-lg font-bold text-ink">
             B
           </span>
-          <span className="font-display text-xl tracking-wide">Barberly</span>
+          <span className="font-display text-xl tracking-wide">BarberOS</span>
         </Link>
         <Link
           href="/"

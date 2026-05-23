@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Barberly — Записване на час и управление за бръснари",
+  title: "BarberOS — Operating system за бръснари",
   description:
     "Платформа за бръснари: онлайн записване, график, услуги и клиенти на едно място.",
 };
