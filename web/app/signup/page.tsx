@@ -17,7 +17,7 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
 
@@ -35,10 +35,23 @@ export default function SignupPage() {
     }
 
     setLoading(true);
-    // Mock signup — just redirect to dashboard
-    setTimeout(() => {
+    try {
+      const res = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ businessName, ownerName, email, password }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error ?? "Грешка при регистрация.");
+        setLoading(false);
+        return;
+      }
       router.push("/dashboard");
-    }, 800);
+    } catch {
+      setError("Няма връзка със сървъра. Опитай отново.");
+      setLoading(false);
+    }
   }
 
   return (
@@ -227,7 +240,7 @@ export default function SignupPage() {
           </form>
 
           <p className="mt-6 text-center text-[11px] text-bone-dim/70">
-            Демо: всички данни ще те пуснат вътре. Реална регистрация ще има при production launch.
+            Акаунтът ти се създава в реална база данни. Получаваш 7 дни безплатен пробен период.
           </p>
         </div>
       </section>

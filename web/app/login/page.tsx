@@ -10,15 +10,30 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!email.trim() || !password.trim()) return;
     setLoading(true);
-    // Mock login — accept anything, redirect to dashboard
-    setTimeout(() => {
+    setError("");
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error ?? "Грешка при вход.");
+        setLoading(false);
+        return;
+      }
       router.push("/dashboard");
-    }, 600);
+    } catch {
+      setError("Няма връзка със сървъра. Опитай отново.");
+      setLoading(false);
+    }
   }
 
   return (
@@ -95,10 +110,13 @@ export default function LoginPage() {
                 className="mt-1.5 w-full rounded-xl border border-ink-muted bg-ink px-4 py-3 text-sm text-bone placeholder:text-bone-dim/50 focus:border-accent focus:outline-none"
                 required
               />
-              <p className="mt-1.5 text-[10px] italic text-bone-dim/70">
-                Демо: всеки имейл и парола ще те пуснат вътре.
-              </p>
             </div>
+
+            {error && (
+              <p className="rounded-lg border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-sm text-rose-200">
+                {error}
+              </p>
+            )}
 
             <button
               type="submit"
