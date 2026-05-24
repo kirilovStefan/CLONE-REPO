@@ -154,13 +154,13 @@ function ServiceFormModal({
   const { t } = useT();
   const [name, setName] = useState(initial?.name ?? "");
   const [description, setDescription] = useState(initial?.description ?? "");
-  const [durationMin, setDurationMin] = useState(
-    String(initial?.durationMin ?? 30)
-  );
+  const initialDuration = initial?.durationMin ?? 30;
+  const [hours, setHours] = useState(Math.floor(initialDuration / 60));
+  const [minutes, setMinutes] = useState(initialDuration % 60);
   const [price, setPrice] = useState(String(initial?.priceEur ?? ""));
 
-  const canSave =
-    name.trim() && Number(durationMin) > 0 && !isNaN(Number(price));
+  const durationMin = hours * 60 + minutes;
+  const canSave = name.trim() && durationMin >= 5 && !isNaN(Number(price));
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -168,10 +168,13 @@ function ServiceFormModal({
     onSave({
       name: name.trim(),
       description: description.trim(),
-      durationMin: Number(durationMin),
+      durationMin,
       priceEur: Number(price),
     });
   }
+
+  const hourOptions = [0, 1, 2, 3, 4, 5, 6, 7, 8];
+  const minuteOptions = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55];
 
   return (
     <div
@@ -215,31 +218,54 @@ function ServiceFormModal({
               className="input"
             />
           </Field>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <Field label={t("serviceForm.duration")}>
-              <input
-                type="number"
-                min="5"
-                step="5"
-                value={durationMin}
-                onChange={(e) => setDurationMin(e.target.value)}
-                className="input"
-                required
-              />
-            </Field>
-            <Field label={t("serviceForm.price")}>
-              <input
-                type="number"
-                min="0"
-                step="0.5"
-                value={price}
-                onChange={(e) => setPrice(e.target.value)}
-                placeholder="0"
-                className="input"
-                required
-              />
-            </Field>
-          </div>
+          <Field label={t("serviceForm.durationLabel")}>
+            <div className="grid grid-cols-2 gap-3">
+              <label className="block">
+                <select
+                  value={hours}
+                  onChange={(e) => setHours(Number(e.target.value))}
+                  className="input"
+                >
+                  {hourOptions.map((h) => (
+                    <option key={h} value={h}>
+                      {h} {t("serviceForm.hours")}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="block">
+                <select
+                  value={minutes}
+                  onChange={(e) => setMinutes(Number(e.target.value))}
+                  className="input"
+                >
+                  {minuteOptions.map((m) => (
+                    <option key={m} value={m}>
+                      {m} {t("serviceForm.minutes")}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+            {durationMin < 5 && (
+              <p className="mt-1.5 text-[11px] text-rose-400">
+                {t("services.minutes", { count: 5 })}+
+              </p>
+            )}
+          </Field>
+
+          <Field label={t("serviceForm.price")}>
+            <input
+              type="number"
+              min="0"
+              step="0.5"
+              value={price}
+              onChange={(e) => setPrice(e.target.value)}
+              placeholder="0"
+              className="input"
+              required
+            />
+          </Field>
           <div className="flex items-center justify-end gap-3 pt-2">
             <button
               type="button"
