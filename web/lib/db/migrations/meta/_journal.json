@@ -8,6 +8,13 @@
       "when": 1779645467517,
       "tag": "0000_kind_hardball",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1779653571122,
+      "tag": "0001_quiet_living_tribunal",
+      "breakpoints": true
     }
   ]
 }

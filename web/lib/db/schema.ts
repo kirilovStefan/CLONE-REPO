@@ -84,6 +84,10 @@ export const locations = pgTable(
       .references(() => organizations.id, { onDelete: "cascade" }),
     name: text("name").notNull(),
     address: text("address").notNull().default(""),
+    city: text("city").notNull().default(""),
+    street: text("street").notNull().default(""),
+    lat: real("lat"),
+    lng: real("lng"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -282,5 +286,27 @@ export const timeOffRequests = pgTable(
   (t) => ({
     orgIdx: index("time_off_org_idx").on(t.organizationId),
     barberIdx: index("time_off_barber_idx").on(t.barberId),
+  })
+);
+
+// Which services a barber is allowed to perform (junior-barber limiting).
+// Absence of any rows for a barber = can perform all services.
+export const barberServices = pgTable(
+  "barber_services",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    organizationId: uuid("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    barberId: uuid("barber_id")
+      .notNull()
+      .references(() => barbers.id, { onDelete: "cascade" }),
+    serviceId: uuid("service_id")
+      .notNull()
+      .references(() => services.id, { onDelete: "cascade" }),
+  },
+  (t) => ({
+    orgIdx: index("barber_services_org_idx").on(t.organizationId),
+    barberIdx: index("barber_services_barber_idx").on(t.barberId),
   })
 );
