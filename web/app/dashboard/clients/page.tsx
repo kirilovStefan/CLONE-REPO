@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useCalendar } from "@/lib/calendar-context";
+import { useClients } from "@/lib/use-clients";
 import { useT } from "@/lib/i18n";
 import { useCurrency } from "@/lib/currency-context";
 import {
@@ -49,8 +50,9 @@ function computeStats(phone: string): ClientStats {
 }
 
 export default function ClientsPage() {
-  const { clients, addClient, updateClient, removeClient, barbers, viewAs } =
-    useCalendar();
+  const { barbers, viewAs } = useCalendar();
+  const { clients, loading, addClient, updateClient, removeClient } =
+    useClients();
   const { t, localeTag } = useT();
 
   const [query, setQuery] = useState("");
@@ -116,7 +118,9 @@ export default function ClientsPage() {
         />
       </div>
 
-      {filtered.length === 0 ? (
+      {loading ? (
+        <p className="mt-10 text-center text-sm text-bone-dim">…</p>
+      ) : filtered.length === 0 ? (
         <p className="mt-10 text-center text-sm text-bone-dim">
           {query ? t("clients.noMatch") : t("clients.empty")}
         </p>
@@ -161,11 +165,11 @@ export default function ClientsPage() {
             setCreating(false);
             setEditing(null);
           }}
-          onSave={(input) => {
+          onSave={async (input) => {
             if (editing) {
-              updateClient(editing.id, input);
+              await updateClient(editing.id, input);
             } else {
-              addClient(input);
+              await addClient(input);
             }
             setCreating(false);
             setEditing(null);
