@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { organizations, users, locations } from "@/lib/db/schema";
+import { organizations, users } from "@/lib/db/schema";
+import { seedOrganization } from "@/lib/db/seed";
 import { hashPassword } from "@/lib/auth/password";
 import {
   signSession,
@@ -76,10 +77,9 @@ export async function POST(request: Request) {
       })
       .returning();
 
-    // Give the new salon a default location to start from.
-    await db
-      .insert(locations)
-      .values({ organizationId: org.id, name: businessName, address: "" });
+    // Populate the new salon with a starter location, services,
+    // barbers and a few demo appointments.
+    await seedOrganization(org.id, businessName);
 
     const token = await signSession({
       userId: user.id,

@@ -1,0 +1,82 @@
+import { NextResponse } from "next/server";
+import { and, eq } from "drizzle-orm";
+import { db } from "@/lib/db";
+import { barbers } from "@/lib/db/schema";
+import { getSession } from "@/lib/auth/session";
+
+export const runtime = "nodejs";
+
+export async function PATCH(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
+  const session = await getSession();
+  if (!session) {
+    return NextResponse.json({ error: "Неоторизиран." }, { status: 401 });
+  }
+
+  let body: {
+    name?: string;
+    title?: string;
+    locationId?: string;
+    workStart?: number;
+    workEnd?: number;
+    specialties?: string[];
+  };
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Невалидна заявка." }, { status: 400 });
+  }
+
+  try {
+    const [row] = await db
+      .update(barbers)
+      .set({
+        name: body.name?.trim(),
+        title: body.title?.trim(),
+        locationId: body.locationId,
+        workStart: body.workStart,
+        workEnd: body.workEnd,
+        specialties: body.specialties,
+      })
+      .where(
+        and(
+          eq(barbers.id, params.id),
+          eq(barbers.organizationId, session.organizationId)
+        )
+      )
+      .returning();
+    if (!row) {
+      return NextResponse.json({ error: "Не е намерен." }, { status: 404 });
+    }
+    return NextResponse.json({ barber: row });
+  } catch (err) {
+    console.error("[barbers PATCH] failed", err);
+    return NextResponse.json({ error: "Грешка при обновяване." }, { status: 500 });
+  }
+}
+
+export async function DELETE(
+  _request: Request,
+  { params }: { params: { id: string } }
+) {
+  const session = await getSession();
+  if (!session) {
+    return NextResponse.json({ error: "Неоторизиран." }, { status: 401 });
+  }
+  try {
+    await db
+      .delete(barbers)
+      .where(
+        and(
+          eq(barbers.id, params.id),
+          eq(barbers.organizationId, session.organizationId)
+        )
+      );
+    return NextResponse.json({ ok: true });
+  } catch (err) {
+    console.error("[barbers DELETE] failed", err);
+    return NextResponse.json({ error: "Грешка при изтриване." }, { status: 500 });
+  }
+}
