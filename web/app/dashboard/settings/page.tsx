@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useT } from "@/lib/i18n";
 import { useTheme } from "@/lib/theme-context";
 import { useCurrency } from "@/lib/currency-context";
+import { useAuth } from "@/lib/auth-context";
 import { CURRENCIES, type Currency } from "@/lib/currency-store";
 import type { ThemeMode } from "@/lib/theme-store";
 
@@ -372,6 +373,7 @@ function PlaceholderSection({
 
 function DangerSection() {
   const { t } = useT();
+  const { logout } = useAuth();
 
   function handleResetDemo() {
     if (!window.confirm(t("settings.danger.resetConfirm"))) return;
@@ -408,8 +410,8 @@ function DangerSection() {
         </button>
         <button
           type="button"
-          disabled
-          className="rounded-lg border border-bone-dim/30 px-4 py-2 text-sm text-bone-dim/60"
+          onClick={logout}
+          className="rounded-lg border border-rose-500/40 px-4 py-2 text-sm text-rose-200 transition hover:bg-rose-500/15"
         >
           {t("settings.danger.logout")}
         </button>

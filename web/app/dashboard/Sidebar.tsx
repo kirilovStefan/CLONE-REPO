@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useMemo, useState } from "react";
 import { useCalendar, isSameDay, startOfDay } from "@/lib/calendar-context";
 import { useT } from "@/lib/i18n";
+import { useAuth } from "@/lib/auth-context";
 import { locations } from "@/lib/mock-data";
 import type { TranslationKey } from "@/lib/translations";
 
@@ -41,8 +42,10 @@ export function Sidebar() {
 function BusinessHeader() {
   const { currentLocationId, setCurrentLocationId } = useCalendar();
   const { t } = useT();
+  const { organization } = useAuth();
   const [open, setOpen] = useState(false);
   const location = locations.find((l) => l.id === currentLocationId);
+  const businessName = organization?.name ?? t("sidebar.businessName");
 
   return (
     <div className="relative border-b border-ink-muted/30">
@@ -60,7 +63,7 @@ function BusinessHeader() {
         </span>
         <div className="min-w-0 flex-1">
           <p className="truncate font-display text-sm leading-tight">
-            {t("sidebar.businessName")}
+            {businessName}
           </p>
           <p className="truncate text-[10px] uppercase tracking-widest text-bone-dim">
             📍 {location?.name ?? t("sidebar.chooseLocation")}

@@ -5,20 +5,23 @@ import { useState, type ReactNode } from "react";
 import { Sidebar } from "./Sidebar";
 import { CalendarProvider, useCalendar } from "@/lib/calendar-context";
 import { LanguageStrip, useT } from "@/lib/i18n";
+import { AuthProvider } from "@/lib/auth-context";
 import { type TimeOffRequest } from "@/lib/mock-data";
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   return (
-    <CalendarProvider>
-      <div className="flex h-screen overflow-hidden bg-ink">
-        <Sidebar />
-        <div className="flex min-w-0 flex-1 flex-col">
-          <TopBar />
-          <LanguageStrip />
-          <div className="flex-1 overflow-hidden">{children}</div>
+    <AuthProvider>
+      <CalendarProvider>
+        <div className="flex h-screen overflow-hidden bg-ink">
+          <Sidebar />
+          <div className="flex min-w-0 flex-1 flex-col">
+            <TopBar />
+            <LanguageStrip />
+            <div className="flex-1 overflow-hidden">{children}</div>
+          </div>
         </div>
-      </div>
-    </CalendarProvider>
+      </CalendarProvider>
+    </AuthProvider>
   );
 }
 
