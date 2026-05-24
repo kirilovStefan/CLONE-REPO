@@ -22,7 +22,7 @@ const items: Item[] = [
   { href: "/dashboard/reports", labelKey: "nav.reports", icon: "📊" },
   { href: "/dashboard/clients", labelKey: "nav.clients", icon: "👥" },
   { href: "/dashboard/team", labelKey: "nav.team", icon: "✂️" },
-  { href: "/dashboard/services", labelKey: "nav.services", icon: "🧾", soon: true },
+  { href: "/dashboard/services", labelKey: "nav.services", icon: "🧾" },
   { href: "/dashboard/finance", labelKey: "nav.finance", icon: "💰", soon: true },
   { href: "/dashboard/inventory", labelKey: "nav.inventory", icon: "📦" },
   { href: "/dashboard/settings", labelKey: "nav.settings", icon: "⚙️" },

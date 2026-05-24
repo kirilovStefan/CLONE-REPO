@@ -1402,6 +1402,60 @@ export const translations = {
     it: "Esempio: {price}",
     fr: "Exemple : {price}",
   },
+
+  // Services management page
+  "services.title": {
+    bg: "Услуги",
+    en: "Services",
+    tr: "Hizmetler",
+    de: "Dienste",
+    es: "Servicios",
+    it: "Servizi",
+    fr: "Services",
+  },
+  "services.subtitle": {
+    bg: "Управление на услугите, цените и продължителността",
+    en: "Manage services, prices and durations",
+  },
+  "services.count": { bg: "{count} услуги", en: "{count} services" },
+  "services.add": { bg: "+ Нова услуга", en: "+ New service" },
+  "services.search": {
+    bg: "Търси услуга…",
+    en: "Search service…",
+  },
+  "services.empty": {
+    bg: "Все още няма услуги. Добави първата.",
+    en: "No services yet. Add your first.",
+  },
+  "services.noMatch": {
+    bg: "Няма услуги, отговарящи на търсенето.",
+    en: "No services match your search.",
+  },
+  "services.minutes": { bg: "{count} мин", en: "{count} min" },
+  "services.edit": { bg: "Редактирай", en: "Edit" },
+  "services.delete": { bg: "Изтрий", en: "Delete" },
+  "services.deleteConfirm": {
+    bg: 'Изтриване на услуга "{name}"?',
+    en: 'Delete service "{name}"?',
+  },
+
+  // Service form
+  "serviceForm.titleNew": { bg: "Нова услуга", en: "New service" },
+  "serviceForm.titleEdit": { bg: "Редактирай услуга", en: "Edit service" },
+  "serviceForm.name": { bg: "Име на услугата *", en: "Service name *" },
+  "serviceForm.namePlaceholder": {
+    bg: "напр. Класическо подстригване",
+    en: "e.g. Classic haircut",
+  },
+  "serviceForm.description": { bg: "Описание", en: "Description" },
+  "serviceForm.descriptionPlaceholder": {
+    bg: "напр. Машинка и ножица, оформяне на линии",
+    en: "e.g. Clipper and scissors, line-up",
+  },
+  "serviceForm.duration": { bg: "Продължителност (мин) *", en: "Duration (min) *" },
+  "serviceForm.price": { bg: "Цена *", en: "Price *" },
+  "serviceForm.cancel": { bg: "Отказ", en: "Cancel" },
+  "serviceForm.save": { bg: "💾 Запази", en: "💾 Save" },
 } as const satisfies Record<string, LocalizedString>;
 
 export type TranslationKey = keyof typeof translations;
