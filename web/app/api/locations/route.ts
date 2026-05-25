@@ -1,9 +1,28 @@
 import { NextResponse } from "next/server";
+import { asc, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { locations } from "@/lib/db/schema";
 import { getSession } from "@/lib/auth/session";
 
 export const runtime = "nodejs";
+
+export async function GET() {
+  const session = await getSession();
+  if (!session) {
+    return NextResponse.json({ error: "Неоторизиран." }, { status: 401 });
+  }
+  try {
+    const rows = await db
+      .select()
+      .from(locations)
+      .where(eq(locations.organizationId, session.organizationId))
+      .orderBy(asc(locations.createdAt));
+    return NextResponse.json({ locations: rows });
+  } catch (err) {
+    console.error("[locations GET] failed", err);
+    return NextResponse.json({ error: "Грешка при зареждане." }, { status: 500 });
+  }
+}
 
 export async function POST(request: Request) {
   const session = await getSession();

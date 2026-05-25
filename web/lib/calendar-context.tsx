@@ -8,12 +8,11 @@ import {
   type ReactNode,
 } from "react";
 import {
-  barbers as seedBarbers,
-  locations,
   products as seedProducts,
   todaysAppointments,
   type Barber,
   type Client,
+  type Location,
   type Product,
   type TimeOffReason,
   type TimeOffRequest,
@@ -25,7 +24,6 @@ import {
   saveClients,
   seedClientsFromAppointments,
 } from "./clients-store";
-import { loadTeam, saveTeam } from "./team-store";
 
 export type ViewAs = "owner" | string;
 
@@ -40,6 +38,7 @@ type NewTimeOffInput = {
 type CalendarContextValue = {
   selectedDate: Date;
   setSelectedDate: (d: Date) => void;
+  locations: Location[];
   currentLocationId: string;
   setCurrentLocationId: (id: string) => void;
   viewAs: ViewAs;
@@ -60,9 +59,9 @@ type CalendarContextValue = {
   updateClient: (id: string, patch: Partial<Omit<Client, "id" | "createdAt">>) => void;
   removeClient: (id: string) => void;
   barbers: Barber[];
-  addBarber: (input: Omit<Barber, "id">) => Barber;
-  updateBarber: (id: string, patch: Partial<Omit<Barber, "id">>) => void;
-  removeBarber: (id: string) => void;
+  addBarber: (input: Omit<Barber, "id">) => Promise<void>;
+  updateBarber: (id: string, patch: Partial<Omit<Barber, "id">>) => Promise<void>;
+  removeBarber: (id: string) => Promise<void>;
 };
 
 const CalendarContext = createContext<CalendarContextValue | null>(null);
@@ -73,9 +72,8 @@ export function CalendarProvider({ children }: { children: ReactNode }) {
     d.setHours(0, 0, 0, 0);
     return d;
   });
-  const [currentLocationId, setCurrentLocationIdRaw] = useState<string>(
-    locations[0].id
-  );
+  const [locations, setLocations] = useState<Location[]>([]);
+  const [currentLocationId, setCurrentLocationIdRaw] = useState<string>("");
   const [viewAs, setViewAs] = useState<ViewAs>("owner");
   const [timeOffRequests, setTimeOffRequests] = useState<TimeOffRequest[]>([]);
   const [timeOffLoaded, setTimeOffLoaded] = useState(false);
@@ -83,8 +81,7 @@ export function CalendarProvider({ children }: { children: ReactNode }) {
   const [productsLoaded, setProductsLoaded] = useState(false);
   const [clients, setClients] = useState<Client[]>([]);
   const [clientsLoaded, setClientsLoaded] = useState(false);
-  const [barbers, setBarbers] = useState<Barber[]>(seedBarbers);
-  const [barbersLoaded, setBarbersLoaded] = useState(false);
+  const [barbers, setBarbers] = useState<Barber[]>([]);
 
   useEffect(() => {
     setTimeOffRequests(loadTimeOff());
@@ -179,31 +176,70 @@ export function CalendarProvider({ children }: { children: ReactNode }) {
   }
 
   useEffect(() => {
-    const stored = loadTeam();
-    if (stored && stored.length > 0) setBarbers(stored);
-    setBarbersLoaded(true);
+    let cancelled = false;
+    (async () => {
+      try {
+        const [locRes, barberRes] = await Promise.all([
+          fetch("/api/locations"),
+          fetch("/api/barbers"),
+        ]);
+        const locData = locRes.ok ? await locRes.json() : { locations: [] };
+        const barberData = barberRes.ok ? await barberRes.json() : { barbers: [] };
+        if (cancelled) return;
+        setLocations(locData.locations ?? []);
+        setBarbers(barberData.barbers ?? []);
+      } catch {
+        // leave empty on failure; UI shows the empty state
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
+  // Default the active location to the first one once locations arrive.
   useEffect(() => {
-    if (!barbersLoaded) return;
-    saveTeam(barbers);
-  }, [barbers, barbersLoaded]);
+    if (locations.length === 0) return;
+    setCurrentLocationIdRaw((prev) =>
+      prev && locations.some((l) => l.id === prev) ? prev : locations[0].id
+    );
+  }, [locations]);
 
-  function addBarber(input: Omit<Barber, "id">): Barber {
-    const barber: Barber = {
-      ...input,
-      id: `br-local-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-    };
-    setBarbers((prev) => [...prev, barber]);
-    return barber;
+  async function addBarber(input: Omit<Barber, "id">): Promise<void> {
+    const res = await fetch("/api/barbers", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: input.name,
+        title: input.title,
+        locationId: input.locationId,
+        workStart: input.workStart,
+        workEnd: input.workEnd,
+        specialties: input.specialties,
+      }),
+    });
+    if (!res.ok) return;
+    const data = await res.json();
+    setBarbers((prev) => [...prev, data.barber]);
   }
 
-  function updateBarber(id: string, patch: Partial<Omit<Barber, "id">>) {
-    setBarbers((prev) => prev.map((b) => (b.id === id ? { ...b, ...patch } : b)));
+  async function updateBarber(
+    id: string,
+    patch: Partial<Omit<Barber, "id">>
+  ): Promise<void> {
+    const res = await fetch(`/api/barbers/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(patch),
+    });
+    if (!res.ok) return;
+    const data = await res.json();
+    setBarbers((prev) => prev.map((b) => (b.id === id ? data.barber : b)));
   }
 
-  function removeBarber(id: string) {
+  async function removeBarber(id: string): Promise<void> {
     setBarbers((prev) => prev.filter((b) => b.id !== id));
+    await fetch(`/api/barbers/${id}`, { method: "DELETE" });
   }
 
   function setCurrentLocationId(id: string) {
@@ -250,6 +286,7 @@ export function CalendarProvider({ children }: { children: ReactNode }) {
       value={{
         selectedDate,
         setSelectedDate,
+        locations,
         currentLocationId,
         setCurrentLocationId,
         viewAs,

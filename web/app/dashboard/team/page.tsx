@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { useCalendar } from "@/lib/calendar-context";
 import { useT } from "@/lib/i18n";
-import { locations, type Barber } from "@/lib/mock-data";
+import { type Barber, type Location } from "@/lib/mock-data";
 
 export default function TeamPage() {
   const {
@@ -11,6 +11,7 @@ export default function TeamPage() {
     addBarber,
     updateBarber,
     removeBarber,
+    locations,
     currentLocationId,
   } = useCalendar();
   const { t } = useT();
@@ -90,6 +91,7 @@ export default function TeamPage() {
       {(creating || editing) && (
         <BarberFormModal
           initial={editing ?? undefined}
+          locations={locations}
           defaultLocationId={currentLocationId}
           isEdit={!!editing}
           onClose={() => {
@@ -181,12 +183,14 @@ function BarberCard({
 
 function BarberFormModal({
   initial,
+  locations,
   defaultLocationId,
   isEdit,
   onClose,
   onSave,
 }: {
   initial?: Barber;
+  locations: Location[];
   defaultLocationId: string;
   isEdit: boolean;
   onClose: () => void;

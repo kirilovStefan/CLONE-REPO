@@ -6,7 +6,6 @@ import { useMemo, useState } from "react";
 import { useCalendar, isSameDay, startOfDay } from "@/lib/calendar-context";
 import { useT } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth-context";
-import { locations } from "@/lib/mock-data";
 import type { TranslationKey } from "@/lib/translations";
 
 type Item = {
@@ -40,7 +39,7 @@ export function Sidebar() {
 }
 
 function BusinessHeader() {
-  const { currentLocationId, setCurrentLocationId } = useCalendar();
+  const { locations, currentLocationId, setCurrentLocationId } = useCalendar();
   const { t } = useT();
   const { organization } = useAuth();
   const [open, setOpen] = useState(false);
