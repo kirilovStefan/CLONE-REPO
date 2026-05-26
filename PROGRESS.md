@@ -56,3 +56,12 @@
 - _2026-05-25_: Step 2 done — Team form has a service-checkbox list per barber, stored
   in `barber_services`. `/api/barbers` GET now returns each barber's `serviceIds`; POST
   and PATCH sync the join table. Barber cards show a services count. Awaiting QA.
+- _2026-05-25 (eve, paused)_: QA BLOCKED. User added a barber in the running app; it
+  showed in the UI but never reached Neon, and the location switcher still listed 3
+  locations (Център/Младост/Парадайс). Those are the OLD mock+localStorage behaviours,
+  which the current code can no longer produce (seed = 1 location, adds go through
+  `POST /api/barbers`). Strong hypothesis: the instance under test is running stale
+  code, not branch `claude/barber-booking-app-sMtXL` @ eb4f5b8. NEXT SESSION, FIRST
+  THING: confirm where/how the app is served (local `npm run dev` vs deployed URL),
+  pull latest + restart + hard-refresh, then re-run QA against the `barbers` table
+  (not `products`). Code itself: typecheck + build both pass.
