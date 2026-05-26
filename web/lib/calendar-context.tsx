@@ -216,6 +216,7 @@ export function CalendarProvider({ children }: { children: ReactNode }) {
         workStart: input.workStart,
         workEnd: input.workEnd,
         specialties: input.specialties,
+        serviceIds: input.serviceIds ?? [],
       }),
     });
     if (!res.ok) return;

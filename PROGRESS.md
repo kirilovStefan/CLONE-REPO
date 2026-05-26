@@ -16,14 +16,25 @@
 - [x] Schema for `barber_services` + locations with city/street/geo
 - [x] Verify `barber_services` exists in Neon production — confirmed 2026-05-25 (12 rows)
 - [~] **Big integration** (split into 4 sub-steps, sequential, QA between each):
-  - [x] 1. Barbers + Locations → database (Team CRUD, location switcher, View As) — **awaiting QA**
-  - [ ] 2. Per-barber service checkboxes (`barber_services`)
+  - [x] 1. Barbers + Locations → database (Team CRUD, location switcher, View As)
+  - [x] 2. Per-barber service checkboxes (`barber_services`) — **awaiting QA**
   - [ ] 3. Calendar reads barbers/services/appointments from database
   - [ ] 4. Appointments write-path (create / update / cancel via `/api/appointments`)
 - [ ] Inventory → database (`products` table exists; `inventory-store.ts` still localStorage)
 - [ ] Reports / sales → database (`product_sales` table exists; `sales-store.ts` still localStorage)
 - [ ] Team & Time-off → database (`time_off_requests` table exists; `team-store.ts` / `time-off-store.ts` still localStorage)
 - [ ] Appointments write-path (create / update / cancel through `/api/appointments`)
+
+## Decisions
+
+- _2026-05-25_: After step 1 QA the user requested a richer salon profile (location
+  city/street, account/business settings wired to the DB, more fields at signup).
+  Agreed to do this as a dedicated "Salon profile & settings" step AFTER finishing the
+  calendar integration (steps 2-4). Schema already has `city`/`street`/`lat`/`lng` on
+  locations — mostly a UI + `PATCH /api/locations/[id]` job when we get to it.
+- Per-barber services rule: a barber with NO `barber_services` rows can perform ALL
+  services (seeded barbers); rows present = exactly those. UI defaults a new barber to
+  all services checked.
 
 ## Known environment notes
 
@@ -42,3 +53,6 @@
   deleted the obsolete `team-store.ts`. Interim: the calendar still reads mock
   appointments/services, so pre-seeded demo appointments won't line up with the real
   barber columns yet (fixed in steps 3-4). Awaiting QA before step 2.
+- _2026-05-25_: Step 2 done — Team form has a service-checkbox list per barber, stored
+  in `barber_services`. `/api/barbers` GET now returns each barber's `serviceIds`; POST
+  and PATCH sync the join table. Barber cards show a services count. Awaiting QA.

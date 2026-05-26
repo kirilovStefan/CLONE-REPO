@@ -32,6 +32,7 @@ export type Barber = {
   workStart: number;
   workEnd: number;
   locationId: string;
+  serviceIds?: string[];
 };
 
 export const locations: Location[] = [

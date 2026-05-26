@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { and, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { barbers } from "@/lib/db/schema";
+import { barbers, barberServices } from "@/lib/db/schema";
 import { getSession } from "@/lib/auth/session";
 
 export const runtime = "nodejs";
@@ -22,6 +22,7 @@ export async function PATCH(
     workStart?: number;
     workEnd?: number;
     specialties?: string[];
+    serviceIds?: string[];
   };
   try {
     body = await request.json();
@@ -29,6 +30,7 @@ export async function PATCH(
     return NextResponse.json({ error: "Невалидна заявка." }, { status: 400 });
   }
 
+  const org = session.organizationId;
   try {
     const [row] = await db
       .update(barbers)
@@ -40,17 +42,45 @@ export async function PATCH(
         workEnd: body.workEnd,
         specialties: body.specialties,
       })
-      .where(
-        and(
-          eq(barbers.id, params.id),
-          eq(barbers.organizationId, session.organizationId)
-        )
-      )
+      .where(and(eq(barbers.id, params.id), eq(barbers.organizationId, org)))
       .returning();
     if (!row) {
       return NextResponse.json({ error: "Не е намерен." }, { status: 404 });
     }
-    return NextResponse.json({ barber: row });
+
+    if (body.serviceIds !== undefined) {
+      await db
+        .delete(barberServices)
+        .where(
+          and(
+            eq(barberServices.barberId, params.id),
+            eq(barberServices.organizationId, org)
+          )
+        );
+      if (body.serviceIds.length > 0) {
+        await db.insert(barberServices).values(
+          body.serviceIds.map((serviceId) => ({
+            organizationId: org,
+            barberId: params.id,
+            serviceId,
+          }))
+        );
+      }
+    }
+
+    const joinRows = await db
+      .select({ serviceId: barberServices.serviceId })
+      .from(barberServices)
+      .where(
+        and(
+          eq(barberServices.barberId, params.id),
+          eq(barberServices.organizationId, org)
+        )
+      );
+
+    return NextResponse.json({
+      barber: { ...row, serviceIds: joinRows.map((r) => r.serviceId) },
+    });
   } catch (err) {
     console.error("[barbers PATCH] failed", err);
     return NextResponse.json({ error: "Грешка при обновяване." }, { status: 500 });

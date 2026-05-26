@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { asc, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { barbers } from "@/lib/db/schema";
+import { barbers, barberServices } from "@/lib/db/schema";
 import { getSession } from "@/lib/auth/session";
 
 export const runtime = "nodejs";
@@ -12,12 +12,31 @@ export async function GET() {
     return NextResponse.json({ error: "Неоторизиран." }, { status: 401 });
   }
   try {
-    const rows = await db
-      .select()
-      .from(barbers)
-      .where(eq(barbers.organizationId, session.organizationId))
-      .orderBy(asc(barbers.createdAt));
-    return NextResponse.json({ barbers: rows });
+    const org = session.organizationId;
+    const [rows, joinRows] = await Promise.all([
+      db
+        .select()
+        .from(barbers)
+        .where(eq(barbers.organizationId, org))
+        .orderBy(asc(barbers.createdAt)),
+      db
+        .select()
+        .from(barberServices)
+        .where(eq(barberServices.organizationId, org)),
+    ]);
+
+    const byBarber = new Map<string, string[]>();
+    for (const r of joinRows) {
+      const list = byBarber.get(r.barberId) ?? [];
+      list.push(r.serviceId);
+      byBarber.set(r.barberId, list);
+    }
+
+    const result = rows.map((b) => ({
+      ...b,
+      serviceIds: byBarber.get(b.id) ?? [],
+    }));
+    return NextResponse.json({ barbers: result });
   } catch (err) {
     console.error("[barbers GET] failed", err);
     return NextResponse.json({ error: "Грешка при зареждане." }, { status: 500 });
@@ -37,6 +56,7 @@ export async function POST(request: Request) {
     workStart?: number;
     workEnd?: number;
     specialties?: string[];
+    serviceIds?: string[];
   };
   try {
     body = await request.json();
@@ -65,7 +85,19 @@ export async function POST(request: Request) {
         specialties: body.specialties ?? [],
       })
       .returning();
-    return NextResponse.json({ barber: row }, { status: 201 });
+
+    const serviceIds = body.serviceIds ?? [];
+    if (serviceIds.length > 0) {
+      await db.insert(barberServices).values(
+        serviceIds.map((serviceId) => ({
+          organizationId: session.organizationId,
+          barberId: row.id,
+          serviceId,
+        }))
+      );
+    }
+
+    return NextResponse.json({ barber: { ...row, serviceIds } }, { status: 201 });
   } catch (err) {
     console.error("[barbers POST] failed", err);
     return NextResponse.json({ error: "Грешка при запазване." }, { status: 500 });

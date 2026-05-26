@@ -732,6 +732,19 @@ export const translations = {
     bg: "напр. Fade, Брада, Класика",
     en: "e.g. Fade, Beard, Classic",
   },
+  "teamForm.servicesOffered": {
+    bg: "Услуги, които предлага",
+    en: "Services offered",
+  },
+  "teamForm.servicesHint": {
+    bg: "Отметни кои услуги може да изпълнява този бръснар.",
+    en: "Choose which services this barber can perform.",
+  },
+  "teamForm.servicesEmpty": {
+    bg: "Първо добави услуги от секция „Услуги“.",
+    en: "Add services first from the Services section.",
+  },
+  "team.servicesBadge": { bg: "{count} услуги", en: "{count} services" },
   "teamForm.cancel": { bg: "Отказ", en: "Cancel" },
   "teamForm.save": { bg: "💾 Запази", en: "💾 Save" },
 

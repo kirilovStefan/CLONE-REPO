@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useCalendar } from "@/lib/calendar-context";
+import { useServices } from "@/lib/use-services";
 import { useT } from "@/lib/i18n";
 import { type Barber, type Location } from "@/lib/mock-data";
 
@@ -147,6 +148,11 @@ function BarberCard({
             ★ {barber.rating} ·{" "}
             {t("team.reviews", { count: barber.reviewsCount })}
           </p>
+          {barber.serviceIds && barber.serviceIds.length > 0 && (
+            <p className="mt-1 text-xs text-bone-dim">
+              🧾 {t("team.servicesBadge", { count: barber.serviceIds.length })}
+            </p>
+          )}
           {barber.specialties.length > 0 && (
             <div className="mt-2 flex flex-wrap gap-1.5">
               {barber.specialties.map((s) => (
@@ -207,6 +213,25 @@ function BarberFormModal({
   const [specialtiesText, setSpecialtiesText] = useState(
     initial?.specialties.join(", ") ?? ""
   );
+  const { services } = useServices();
+  const [serviceIds, setServiceIds] = useState<string[]>(
+    initial?.serviceIds ?? []
+  );
+  const servicesDefaulted = useRef(false);
+  useEffect(() => {
+    if (servicesDefaulted.current || services.length === 0) return;
+    servicesDefaulted.current = true;
+    // A new barber (or one with no explicit limit) offers all services.
+    if (!initial?.serviceIds || initial.serviceIds.length === 0) {
+      setServiceIds(services.map((s) => s.id));
+    }
+  }, [services, initial]);
+
+  function toggleService(id: string) {
+    setServiceIds((prev) =>
+      prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id]
+    );
+  }
 
   const startNum = Number(workStart);
   const endNum = Number(workEnd);
@@ -232,6 +257,7 @@ function BarberFormModal({
         .split(",")
         .map((s) => s.trim())
         .filter(Boolean),
+      serviceIds,
       rating: initial?.rating ?? 5.0,
       reviewsCount: initial?.reviewsCount ?? 0,
     });
@@ -333,6 +359,44 @@ function BarberFormModal({
               className="input"
             />
           </Field>
+
+          <div>
+            <span className="text-xs uppercase tracking-widest text-bone-dim">
+              {t("teamForm.servicesOffered")}
+            </span>
+            <p className="mt-1 text-[11px] text-bone-dim/70">
+              {t("teamForm.servicesHint")}
+            </p>
+            {services.length === 0 ? (
+              <p className="mt-2 rounded-lg border border-ink-muted bg-ink/40 px-3 py-2 text-xs text-bone-dim">
+                {t("teamForm.servicesEmpty")}
+              </p>
+            ) : (
+              <div className="mt-2 grid max-h-44 gap-1.5 overflow-y-auto sm:grid-cols-2">
+                {services.map((s) => {
+                  const checked = serviceIds.includes(s.id);
+                  return (
+                    <label
+                      key={s.id}
+                      className={`flex cursor-pointer items-center gap-2.5 rounded-lg border px-3 py-2 text-sm transition ${
+                        checked
+                          ? "border-accent/60 bg-accent/10 text-bone"
+                          : "border-ink-muted text-bone-dim hover:border-accent/40"
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={() => toggleService(s.id)}
+                        className="h-4 w-4 accent-accent"
+                      />
+                      <span className="min-w-0 truncate">{s.name}</span>
+                    </label>
+                  );
+                })}
+              </div>
+            )}
+          </div>
 
           <div className="flex items-center justify-end gap-3 pt-2">
             <button
