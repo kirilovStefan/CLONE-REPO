@@ -1,0 +1,356 @@
+<!doctype html>
+<html lang="bg" class="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>BarberOS — табло (преглед на новия дизайн)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --ink:#0a0a0b;--ink-soft:#141417;--ink-card:#16161a;--ink-muted:#2a2a30;
+    --bone:#f5efe6;--bone-dim:#a39b8d;
+    --gold-1:#f3dca0;--gold-2:#d8b36a;--gold-3:#a9823f;
+    --green:#3fb985;--violet:#8b6fe0;--amber:#d8b36a;--rose:#e0728c;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--ink);color:var(--bone);font-family:"Inter",system-ui,sans-serif;-webkit-font-smoothing:antialiased;overflow:hidden}
+  .serif{font-family:"Playfair Display",Georgia,serif}
+  .muted{color:var(--bone-dim)}
+  .gold{background:linear-gradient(135deg,var(--gold-1),var(--gold-2) 50%,var(--gold-3));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .app{display:flex;height:100vh}
+  svg{display:block}
+
+  /* ---------- sidebar ---------- */
+  .side{width:264px;flex:0 0 264px;background:var(--ink-soft);border-right:1px solid rgba(42,42,48,.6);display:flex;flex-direction:column;height:100vh}
+  .biz{position:relative;border-bottom:1px solid rgba(42,42,48,.5)}
+  .biz-btn{display:flex;align-items:center;gap:11px;width:100%;padding:14px 16px;background:none;border:0;color:inherit;cursor:pointer;text-align:left}
+  .biz-btn:hover{background:rgba(42,42,48,.25)}
+  .logo{width:36px;height:36px;border-radius:11px;display:grid;place-items:center;flex:0 0 auto;background:linear-gradient(135deg,var(--gold-1),var(--gold-3));box-shadow:0 4px 14px rgba(216,179,106,.3)}
+  .biz-name{font-family:"Playfair Display",serif;font-size:15px;line-height:1.1}
+  .biz-loc{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--bone-dim);margin-top:2px}
+  .dd{position:absolute;left:12px;right:12px;top:100%;margin-top:4px;background:var(--ink-card);border:1px solid var(--ink-muted);border-radius:14px;box-shadow:0 24px 60px rgba(0,0,0,.55);z-index:40;overflow:hidden;display:none}
+  .dd.open{display:block}
+  .dd-h{padding:9px 14px;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--bone-dim);border-bottom:1px solid rgba(42,42,48,.5)}
+  .dd-item{display:flex;align-items:center;gap:11px;width:100%;padding:11px 14px;background:none;border:0;color:inherit;cursor:pointer;text-align:left;font-size:14px}
+  .dd-item:hover{background:rgba(42,42,48,.4)}
+  .dd-item.active{background:rgba(216,179,106,.1)}
+  .dd-ic{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;background:rgba(42,42,48,.6);font-size:12px;color:var(--bone-dim);flex:0 0 auto}
+
+  /* mini calendar */
+  .mini{padding:10px 14px;border-bottom:1px solid rgba(42,42,48,.5)}
+  .mini-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+  .mini-top button{background:none;border:0;color:var(--bone-dim);cursor:pointer;width:22px;height:22px;border-radius:6px}
+  .mini-top button:hover{background:rgba(42,42,48,.5);color:var(--bone)}
+  .mini-title{font-size:11px;font-weight:600;text-transform:capitalize}
+  .mini-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:1px}
+  .mini-grid span.h{font-size:8px;text-transform:uppercase;color:rgba(163,155,141,.6);text-align:center}
+  .mini-grid button{height:24px;border:0;background:none;color:var(--bone);font-size:11px;border-radius:6px;cursor:pointer}
+  .mini-grid button:hover{background:rgba(42,42,48,.5)}
+  .mini-grid button.dim{color:rgba(163,155,141,.3)}
+  .mini-grid button.today{color:#ef6b6b;font-weight:700}
+  .mini-grid button.sel{box-shadow:inset 0 0 0 1px var(--gold-2)}
+
+  /* nav */
+  nav.menu{flex:1;overflow-y:auto;padding:8px}
+  .nav-i{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border-radius:11px;color:var(--bone-dim);cursor:pointer;font-size:14px;margin-bottom:2px}
+  .nav-i:hover{background:rgba(42,42,48,.4);color:var(--bone)}
+  .nav-i.active{background:rgba(216,179,106,.13);color:var(--bone)}
+  .nav-i .l{display:flex;align-items:center;gap:11px}
+  .nav-i.active svg{color:var(--gold-2)}
+  .badge{background:#ef6b6b;color:#fff;font-size:10px;font-weight:700;border-radius:999px;min-width:20px;height:20px;display:grid;place-items:center;padding:0 5px}
+  .soon{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:rgba(163,155,141,.6)}
+  .side-foot{padding:12px 16px;border-top:1px solid rgba(42,42,48,.5);font-size:10px;color:var(--bone-dim)}
+
+  /* ---------- main ---------- */
+  .main{flex:1;display:flex;flex-direction:column;min-width:0;height:100vh}
+  .top{display:flex;align-items:center;justify-content:flex-end;gap:12px;padding:10px 22px;border-bottom:1px solid rgba(42,42,48,.5);background:rgba(10,10,11,.95);position:relative;z-index:30}
+  .ic-btn{position:relative;width:36px;height:36px;border-radius:10px;border:1px solid rgba(42,42,48,.7);background:none;color:var(--bone);display:grid;place-items:center;cursor:pointer}
+  .ic-btn:hover{border-color:var(--gold-2)}
+  .ic-btn .bdot{position:absolute;top:-5px;right:-5px;background:#ef6b6b;color:#fff;font-size:10px;font-weight:700;border-radius:999px;min-width:17px;height:17px;display:grid;place-items:center}
+  .viewas{position:relative}
+  .viewas-btn{display:flex;align-items:center;gap:9px;border:1px solid rgba(42,42,48,.7);border-radius:10px;padding:7px 13px;background:none;color:var(--bone);cursor:pointer;font-size:14px}
+  .viewas-btn:hover{border-color:var(--gold-2)}
+  .viewas-btn .lab{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--bone-dim)}
+  .sep{color:rgba(163,155,141,.3)}
+  .brandword{font-family:"Playfair Display",serif;letter-spacing:.2em;font-size:13px;color:rgba(163,155,141,.6)}
+  .avatar{width:34px;height:34px;border-radius:999px;display:grid;place-items:center;font-size:13px;font-weight:600;background:rgba(216,179,106,.18);color:var(--gold-2)}
+  .dd-r{position:absolute;right:0;top:100%;margin-top:6px;width:280px;background:var(--ink-card);border:1px solid var(--ink-muted);border-radius:14px;box-shadow:0 24px 60px rgba(0,0,0,.55);z-index:40;overflow:hidden;display:none}
+  .dd-r.open{display:block}
+
+  /* calendar toolbar */
+  .cal-wrap{flex:1;display:flex;flex-direction:column;min-height:0;padding:16px 22px 18px}
+  .toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+  .tl-left{display:flex;align-items:center;gap:8px}
+  .navbtn{width:36px;height:36px;border-radius:10px;border:1px solid rgba(42,42,48,.7);background:none;color:var(--bone-dim);cursor:pointer;display:grid;place-items:center}
+  .navbtn:hover{border-color:var(--gold-2);color:var(--bone)}
+  #dateLabel{font-family:"Playfair Display",serif;font-size:22px;text-transform:capitalize}
+  .today-btn{border:1px solid rgba(42,42,48,.7);background:none;color:var(--bone-dim);border-radius:9px;padding:7px 13px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;cursor:pointer}
+  .today-btn:hover{border-color:var(--gold-2);color:var(--bone)}
+  select.filter{border:1px solid rgba(42,42,48,.7);background:var(--ink);color:var(--bone);border-radius:10px;padding:8px 12px;font-size:14px}
+  .legend{display:flex;gap:18px;flex-wrap:wrap;font-size:12px;color:var(--bone-dim);margin-top:12px}
+  .legend span{display:flex;align-items:center;gap:7px}
+  .ldot{width:9px;height:9px;border-radius:999px}
+
+  /* grid */
+  .grid-box{margin-top:14px;flex:1;min-height:0;overflow:auto;border:1px solid var(--ink-muted);border-radius:18px;background:var(--ink-soft)}
+  .grid{display:flex;min-width:560px}
+  .axis{position:sticky;left:0;z-index:6;width:56px;flex:0 0 56px;background:var(--ink-soft);border-right:1px solid rgba(42,42,48,.6)}
+  .axis .ahead{height:54px;border-bottom:1px solid rgba(42,42,48,.6)}
+  .axis .row{height:60px;position:relative}
+  .axis .row span{position:absolute;right:7px;top:-8px;font-size:11px;color:var(--bone-dim);background:var(--ink-soft);padding:0 3px}
+  .col2{flex:1;min-width:170px;border-right:1px solid rgba(42,42,48,.3);position:relative}
+  .col2:last-child{border-right:0}
+  .chead{height:54px;display:flex;align-items:center;gap:9px;padding:0 13px;border-bottom:1px solid rgba(42,42,48,.6);position:sticky;top:0;background:var(--ink-soft);z-index:3}
+  .cav{width:34px;height:34px;border-radius:999px;display:grid;place-items:center;font-size:12px;font-weight:600;background:rgba(216,179,106,.16);color:var(--gold-2)}
+  .cn{font-size:14px;font-weight:600;line-height:1.1}
+  .ch{font-size:10px;color:var(--bone-dim)}
+  .body{position:relative}
+  .hrline{height:60px;border-bottom:1px solid rgba(42,42,48,.18)}
+  .ev{position:absolute;left:6px;right:6px;border-radius:11px;padding:7px 10px;font-size:11px;line-height:1.25;cursor:pointer;color:#100c04;font-weight:600;box-shadow:0 6px 16px rgba(0,0,0,.3);border-left:4px solid rgba(0,0,0,.15);transition:transform .12s}
+  .ev:hover{transform:scale(1.02)}
+  .ev small{display:block;font-weight:500;opacity:.82}
+  .e-green{background:linear-gradient(135deg,#7ee0b8,var(--green))}
+  .e-violet{background:linear-gradient(135deg,#c3b0f5,var(--violet))}
+  .e-amber{background:linear-gradient(135deg,var(--gold-1),var(--amber))}
+  .e-rose{background:linear-gradient(135deg,#f5b0bd,var(--rose))}
+  .e-done{opacity:.6}
+  .nowline{position:absolute;left:0;right:0;display:flex;align-items:center;z-index:5}
+  .nowline .nd{width:9px;height:9px;border-radius:999px;background:#ef6b6b;margin-left:-4px;box-shadow:0 0 8px rgba(239,107,107,.8)}
+  .nowline .nb{flex:1;height:2px;background:rgba(239,107,107,.75)}
+
+  /* modal */
+  .ov{position:fixed;inset:0;background:rgba(0,0,0,.62);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;padding:20px;z-index:60}
+  .ov.open{display:flex}
+  .modal{width:100%;max-width:460px;background:var(--ink-card);border:1px solid var(--ink-muted);border-radius:20px;padding:24px;box-shadow:0 40px 90px rgba(0,0,0,.6)}
+  .pill{display:inline-flex;align-items:center;gap:7px;border-radius:999px;padding:5px 12px;font-size:12px;font-weight:600}
+  .x{float:right;width:32px;height:32px;border-radius:999px;border:0;background:none;color:var(--bone-dim);cursor:pointer;font-size:16px}
+  .x:hover{background:rgba(42,42,48,.5);color:var(--bone)}
+  .info{margin-top:18px;border:1px solid var(--ink-muted);border-radius:14px;background:rgba(10,10,11,.4);padding:14px;font-size:14px;display:grid;gap:9px}
+  .info .r{display:flex;gap:12px}
+  .info .k{width:80px;flex:0 0 auto;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--bone-dim)}
+  .acts{margin-top:18px;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .act{display:flex;align-items:center;gap:11px;border:1px solid var(--ink-muted);border-radius:13px;padding:12px;background:none;color:var(--bone);cursor:pointer;text-align:left}
+  .act:hover{border-color:rgba(216,179,106,.5);background:rgba(42,42,48,.3)}
+  .act .ai{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;font-size:15px;flex:0 0 auto}
+  .act .at{font-size:13px;font-weight:600}
+  .act .ad{font-size:11px;color:var(--bone-dim)}
+  .hint{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:var(--ink-card);border:1px solid var(--gold-2);color:var(--bone);font-size:12px;padding:9px 16px;border-radius:999px;box-shadow:0 10px 30px rgba(0,0,0,.5);z-index:70}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- SIDEBAR -->
+  <aside class="side">
+    <div class="biz">
+      <button class="biz-btn" onclick="toggle('locDd',this)">
+        <span class="logo"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1a1407" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg></span>
+        <span style="flex:1;min-width:0">
+          <span class="biz-name">Barber & Co.</span>
+          <span class="biz-loc">📍 Център</span>
+        </span>
+        <span class="muted">▾</span>
+      </button>
+      <div class="dd" id="locDd">
+        <div class="dd-h">Локации</div>
+        <button class="dd-item active"><span class="dd-ic">Ц</span><span style="flex:1"><div style="font-weight:600">Център</div><div class="muted" style="font-size:11px">ул. Витоша 12</div></span><span class="gold">✓</span></button>
+        <button class="dd-item"><span class="dd-ic">М</span><span style="flex:1"><div style="font-weight:600">Младост</div><div class="muted" style="font-size:11px">бул. Цариградско 87</div></span></button>
+      </div>
+    </div>
+
+    <div class="mini">
+      <div class="mini-top">
+        <button>‹</button><span class="mini-title gold">май 2026</span><button>›</button>
+      </div>
+      <div class="mini-grid" id="miniGrid"></div>
+    </div>
+
+    <nav class="menu" id="menu">
+      <div class="nav-i active" data-n="Календар"><span class="l"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Календар</span></div>
+      <div class="nav-i" data-n="Отчети"><span class="l"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Отчети</span></div>
+      <div class="nav-i" data-n="Клиенти"><span class="l"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Клиенти</span></div>
+      <div class="nav-i" data-n="Екип"><span class="l"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>Екип</span></div>
+      <div class="nav-i" data-n="Услуги"><span class="l"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></svg>Услуги</span></div>
+      <div class="nav-i" data-n="Склад"><span class="l"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/></svg>Склад</span><span class="badge">2</span></div>
+      <div class="nav-i" data-n="Финанси" style="opacity:.55;cursor:not-allowed"><span class="l"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Финанси</span><span class="soon">скоро</span></div>
+      <div class="nav-i" data-n="Настройки"><span class="l"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Настройки</span></div>
+    </nav>
+    <div class="side-foot">BarberOS · преглед на дизайна</div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main">
+    <div class="top">
+      <div class="viewas">
+        <button class="ic-btn" onclick="toggle('bellDd',this)">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          <span class="bdot">1</span>
+        </button>
+        <div class="dd-r" id="bellDd">
+          <div class="dd-h">Известия</div>
+          <div style="padding:14px;display:flex;gap:11px">
+            <span class="cav">МК</span>
+            <div style="flex:1"><div style="font-weight:600;font-size:14px">Мартин Колев</div><div class="muted" style="font-size:12px">Отпуск · 28 май – 30 май</div>
+              <div style="display:flex;gap:8px;margin-top:9px"><span style="flex:1;text-align:center;font-size:12px;border-radius:8px;background:rgba(63,185,133,.18);color:#7ee0b8;padding:6px">Одобри</span><span style="flex:1;text-align:center;font-size:12px;border-radius:8px;background:rgba(224,114,140,.16);color:#f5b0bd;padding:6px">Откажи</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="viewas">
+        <button class="viewas-btn" onclick="toggle('vaDd',this)">
+          <span class="lab">Виж като</span><span style="font-weight:600">Собственик</span><span class="muted">▾</span>
+        </button>
+        <div class="dd-r" id="vaDd">
+          <button class="dd-item active"><span class="dd-ic" style="background:rgba(216,179,106,.25)">👑</span><span style="flex:1"><div style="font-weight:600">Собственик</div><div class="muted" style="font-size:11px">Пълен достъп</div></span><span class="gold">✓</span></button>
+          <div class="dd-h">Бръснари</div>
+          <button class="dd-item"><span class="cav">ИП</span><span style="flex:1"><div style="font-weight:600">Иван Петров</div><div class="muted" style="font-size:11px">Senior Barber</div></span></button>
+          <button class="dd-item"><span class="cav">ГС</span><span style="flex:1"><div style="font-weight:600">Георги Стоянов</div><div class="muted" style="font-size:11px">Master Barber</div></span></button>
+        </div>
+      </div>
+
+      <span class="sep">·</span>
+      <span class="brandword">BARBEROS</span>
+      <span class="sep">·</span>
+      <span class="avatar">МК</span>
+    </div>
+
+    <div class="cal-wrap">
+      <div class="toolbar">
+        <div class="tl-left">
+          <button class="navbtn" onclick="shiftDay(-1)">←</button>
+          <h1 id="dateLabel" class="serif">сряда, 27 май</h1>
+          <button class="navbtn" onclick="shiftDay(1)">→</button>
+          <button class="today-btn" onclick="resetDay()">Днес</button>
+        </div>
+        <select class="filter">
+          <option>Всички бръснари (3)</option>
+          <option>Иван Петров</option>
+          <option>Георги Стоянов</option>
+          <option>Мартин Колев</option>
+        </select>
+      </div>
+      <div class="legend">
+        <span><span class="ldot" style="background:var(--green)"></span>Потвърден</span>
+        <span><span class="ldot" style="background:var(--violet)"></span>В процес</span>
+        <span><span class="ldot" style="background:var(--gold-2)"></span>Завършен</span>
+        <span><span class="ldot" style="background:var(--rose)"></span>Неявил се</span>
+        <span><span class="ldot" style="background:#ef6b6b;width:18px;height:2px;border-radius:0"></span>Текущ час</span>
+      </div>
+
+      <div class="grid-box">
+        <div class="grid" id="grid"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="ov" id="ov" onclick="if(event.target===this)closeM()">
+  <div class="modal">
+    <button class="x" onclick="closeM()">✕</button>
+    <span class="pill" style="background:rgba(63,185,133,.18);color:#7ee0b8"><span class="ldot" style="background:var(--green)"></span><span id="mStatus">Потвърден</span></span>
+    <h2 class="serif" style="font-size:24px;margin-top:10px" id="mName">Стоян Иванов</h2>
+    <p class="muted" style="font-size:14px;margin-top:3px" id="mWhen">14:00–15:00 · 60 мин · Иван Петров</p>
+    <div class="info">
+      <div class="r"><span class="k">Услуга</span><span id="mService">Подстригване + брада (€22)</span></div>
+      <div class="r"><span class="k">Телефон</span><span class="muted">+359 88 100 0001</span></div>
+      <div class="r"><span class="k">Бележка</span><span class="muted">📝 Скъсяване отстрани</span></div>
+    </div>
+    <p style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--bone-dim);margin-top:18px">Промени статус</p>
+    <div class="acts">
+      <button class="act"><span class="ai" style="background:rgba(63,185,133,.18)">📅</span><span><div class="at">Потвърден</div><div class="ad">Часът е запазен</div></span></button>
+      <button class="act"><span class="ai" style="background:rgba(139,111,224,.2)">✂️</span><span><div class="at">В процес</div><div class="ad">Клиентът е на стола</div></span></button>
+      <button class="act"><span class="ai" style="background:rgba(216,179,106,.2)">💰</span><span><div class="at">Завършен</div><div class="ad">Услугата приключи</div></span></button>
+      <button class="act"><span class="ai" style="background:rgba(224,114,140,.18)">✗</span><span><div class="at">Неявил се</div><div class="ad">Клиентът не дойде</div></span></button>
+    </div>
+  </div>
+</div>
+
+<div class="hint">Цъкай: навигация, „Виж като“, локацията, стрелките за деня и часовете в календара 👆</div>
+
+<script>
+  // ----- mini calendar (May 2026, 27th selected/today) -----
+  (function(){
+    const g=document.getElementById('miniGrid');
+    ['пн','вт','ср','чт','пт','сб','нд'].forEach(d=>{const s=document.createElement('span');s.className='h';s.textContent=d;g.appendChild(s)});
+    // May 1 2026 is Friday -> Monday-first offset = 4
+    const off=4, days=31;
+    for(let i=0;i<off;i++){const b=document.createElement('button');b.className='dim';b.textContent=30+i-off+1;g.appendChild(b)}
+    for(let d=1;d<=days;d++){const b=document.createElement('button');b.textContent=d;if(d===27){b.classList.add('today','sel')}b.onclick=()=>{document.querySelectorAll('#miniGrid .sel').forEach(x=>x.classList.remove('sel'));b.classList.add('sel')};g.appendChild(b)}
+  })();
+
+  // ----- calendar grid -----
+  const barbers=[
+    {ini:'ИП',name:'Иван Петров',hours:'09:00–18:00',evs:[
+      {t:'10:00',top:60,h:54,c:'green',s:'Подстригване',cl:'Стоян Иванов'},
+      {t:'12:00',top:180,h:50,c:'violet',s:'Брада',cl:'Иво Стоянов'},
+      {t:'14:00',top:300,h:80,c:'amber',cls:'e-done',s:'Fade + брада',cl:'Петър К.'},
+    ]},
+    {ini:'ГС',name:'Георги Стоянов',hours:'10:00–19:00',evs:[
+      {t:'10:30',top:90,h:74,c:'violet',s:'Hot towel',cl:'Калоян Д.'},
+      {t:'13:00',top:240,h:54,c:'green',s:'Подстригване',cl:'Емил Х.'},
+    ]},
+    {ini:'МК',name:'Мартин Колев',hours:'11:00–17:00',evs:[
+      {t:'11:00',top:120,h:50,c:'rose',cls:'e-done',s:'Детска прическа',cl:'Иво (8г)'},
+      {t:'12:30',top:210,h:54,c:'green',s:'Класика',cl:'Симеон Й.'},
+    ]},
+  ];
+  const startH=9,endH=18,rowH=60;
+  const grid=document.getElementById('grid');
+  // axis
+  const ax=document.createElement('div');ax.className='axis';
+  ax.innerHTML='<div class="ahead"></div>';
+  for(let h=startH;h<endH;h++){const r=document.createElement('div');r.className='row';r.innerHTML='<span>'+String(h).padStart(2,'0')+':00</span>';ax.appendChild(r)}
+  grid.appendChild(ax);
+  // columns
+  barbers.forEach(b=>{
+    const c=document.createElement('div');c.className='col2';
+    let body='';
+    for(let h=startH;h<endH;h++)body+='<div class="hrline"></div>';
+    // events
+    b.evs.forEach(e=>{
+      body+='<div class="ev e-'+e.c+(e.cls?(' '+e.cls):'')+'" style="top:'+e.top+'px;height:'+(e.h-4)+'px" onclick="openM(\''+e.cl+'\',\''+e.t+'\',\''+e.s+'\',\''+b.name+'\')">'+e.t+'<small>'+e.cl+' · '+e.s+'</small></div>';
+    });
+    // now line at ~14:20 -> minutes from start
+    const nowTop=((14*60+20)-(startH*60))/60*rowH;
+    body+='<div class="nowline" style="top:'+nowTop+'px"><span class="nd"></span><span class="nb"></span></div>';
+    c.innerHTML='<div class="chead"><span class="cav">'+b.ini+'</span><span><div class="cn">'+b.name+'</div><div class="ch">'+b.hours+'</div></span></div><div class="body" style="height:'+((endH-startH)*rowH)+'px">'+body+'</div>';
+    grid.appendChild(c);
+  });
+
+  // ----- interactions -----
+  let openId=null;
+  function toggle(id,btn){
+    document.querySelectorAll('.dd.open,.dd-r.open').forEach(d=>{if(d.id!==id)d.classList.remove('open')});
+    document.getElementById(id).classList.toggle('open');
+    event.stopPropagation();
+  }
+  document.addEventListener('click',()=>document.querySelectorAll('.dd.open,.dd-r.open').forEach(d=>d.classList.remove('open')));
+
+  document.getElementById('menu').addEventListener('click',e=>{
+    const i=e.target.closest('.nav-i'); if(!i||i.style.cursor==='not-allowed')return;
+    document.querySelectorAll('.nav-i').forEach(x=>x.classList.remove('active'));
+    i.classList.add('active');
+  });
+
+  const days=['неделя','понеделник','вторник','сряда','четвъртък','петък','събота'];
+  const months=['януари','февруари','март','април','май','юни','юли','август','септ.','окт.','ноем.','дек.'];
+  let cur=new Date(2026,4,27);
+  function render(){const l=document.getElementById('dateLabel');l.textContent=days[cur.getDay()]+', '+cur.getDate()+' '+months[cur.getMonth()];}
+  function shiftDay(n){cur.setDate(cur.getDate()+n);render();}
+  function resetDay(){cur=new Date(2026,4,27);render();}
+
+  function openM(name,time,service,barber){
+    document.getElementById('mName').textContent=name;
+    document.getElementById('mWhen').textContent=time+' · '+barber;
+    document.getElementById('mService').textContent=service;
+    document.getElementById('ov').classList.add('open');
+  }
+  function closeM(){document.getElementById('ov').classList.remove('open');}
+  setTimeout(()=>{const h=document.querySelector('.hint');if(h)h.style.transition='opacity .6s',h.style.opacity='0',setTimeout(()=>h.remove(),800)},6000);
+</script>
+</body>
+</html>
