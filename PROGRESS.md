@@ -16,9 +16,9 @@
 - [x] Schema for `barber_services` + locations with city/street/geo
 - [x] Verify `barber_services` exists in Neon production — confirmed 2026-05-25 (12 rows)
 - [~] **Big integration** (split into 4 sub-steps, sequential, QA between each):
-  - [x] 1. Barbers + Locations → database (Team CRUD, location switcher, View As)
-  - [x] 2. Per-barber service checkboxes (`barber_services`) — **awaiting QA**
-  - [ ] 3. Calendar reads barbers/services/appointments from database
+  - [x] 1. Barbers + Locations → database (Team CRUD, location switcher, View As) — QA passed 2026-05-27
+  - [x] 2. Per-barber service checkboxes (`barber_services`) — QA passed 2026-05-27
+  - [x] 3. Calendar reads barbers/services/appointments from database — **awaiting QA**
   - [ ] 4. Appointments write-path (create / update / cancel via `/api/appointments`)
 - [ ] Inventory → database (`products` table exists; `inventory-store.ts` still localStorage)
 - [ ] Reports / sales → database (`product_sales` table exists; `sales-store.ts` still localStorage)
@@ -65,3 +65,11 @@
   THING: confirm where/how the app is served (local `npm run dev` vs deployed URL),
   pull latest + restart + hard-refresh, then re-run QA against the `barbers` table
   (not `products`). Code itself: typecheck + build both pass.
+- _2026-05-27_: Steps 1 + 2 QA PASSED (new barber persisted to Neon, survived restart).
+- _2026-05-27_: Step 3 done — calendar now reads services + appointments from the DB.
+  `calendar-context` fetches `/api/services` + `/api/appointments` on mount and maps
+  them to the UI shapes (service `priceEur`→`price`, appointment
+  `durationMinOverride`→`durationMin`); page + sub-components read `services` and
+  `appointments` from context instead of mock. The seeded demo appointments should now
+  line up with the real barber columns. Writes (create/move/resize/status) are still
+  local-only — that's step 4. Awaiting QA. typecheck + build pass.

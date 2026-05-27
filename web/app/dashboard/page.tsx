@@ -2,8 +2,6 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  services,
-  todaysAppointments,
   STATUS_COLOR_CLASSES,
   TIME_OFF_REASON_LABEL,
   type Appointment,
@@ -87,6 +85,8 @@ export default function DashboardCalendarPage() {
     decrementProductStock,
     incrementProductStock,
     barbers,
+    services,
+    appointments,
   } = useCalendar();
   const today = useMemo(() => startOfDay(new Date()), []);
   const isToday = isSameDay(selectedDate, today);
@@ -178,8 +178,8 @@ export default function DashboardCalendarPage() {
   }
 
   const allAppointments = useMemo(
-    () => [...todaysAppointments, ...customAppointments],
-    [customAppointments]
+    () => [...appointments, ...customAppointments],
+    [appointments, customAppointments]
   );
 
   // Global drag listeners
@@ -777,6 +777,7 @@ function BarberColumn({
   ) => void;
 }) {
   const { t, localeTag } = useT();
+  const { services } = useCalendar();
   const initials = barber.name
     .split(" ")
     .map((n) => n[0])
@@ -993,6 +994,7 @@ function AppointmentBlock({
   onMouseDown: (mode: "move" | "resize", e: React.MouseEvent) => void;
 }) {
   const { t, localeTag } = useT();
+  const { services } = useCalendar();
   const service = services.find((s) => s.id === appointment.serviceId);
   if (!service) return null;
 
@@ -1095,13 +1097,13 @@ function NewAppointmentModal({
 }) {
   const { t, localeTag } = useT();
   const { format } = useCurrency();
-  const { barbers } = useCalendar();
+  const { barbers, services } = useCalendar();
   const barber = barbers.find((b) => b.id === barberId);
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
-  const [serviceId, setServiceId] = useState(services[0].id);
+  const [serviceId, setServiceId] = useState(services[0]?.id ?? "");
   const [notes, setNotes] = useState("");
 
   const service = services.find((s) => s.id === serviceId);
@@ -1274,9 +1276,10 @@ function AppointmentDetailsModal({
 }) {
   const { t, localeTag } = useT();
   const { format } = useCurrency();
-  const { barbers } = useCalendar();
-  const service = services.find((s) => s.id === appointment.serviceId)!;
-  const barber = barbers.find((b) => b.id === appointment.barberId)!;
+  const { barbers, services } = useCalendar();
+  const service = services.find((s) => s.id === appointment.serviceId);
+  const barber = barbers.find((b) => b.id === appointment.barberId);
+  if (!service || !barber) return null;
   const durationMin = appointment.durationMin ?? service.durationMin;
   const status = effectiveStatus(appointment, durationMin, now);
   const statusLabel = t(

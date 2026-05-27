@@ -10,10 +10,12 @@ import {
 import {
   products as seedProducts,
   todaysAppointments,
+  type Appointment,
   type Barber,
   type Client,
   type Location,
   type Product,
+  type Service,
   type TimeOffReason,
   type TimeOffRequest,
 } from "./mock-data";
@@ -62,6 +64,9 @@ type CalendarContextValue = {
   addBarber: (input: Omit<Barber, "id">) => Promise<void>;
   updateBarber: (id: string, patch: Partial<Omit<Barber, "id">>) => Promise<void>;
   removeBarber: (id: string) => Promise<void>;
+  services: Service[];
+  appointments: Appointment[];
+  appointmentsLoaded: boolean;
 };
 
 const CalendarContext = createContext<CalendarContextValue | null>(null);
@@ -82,6 +87,9 @@ export function CalendarProvider({ children }: { children: ReactNode }) {
   const [clients, setClients] = useState<Client[]>([]);
   const [clientsLoaded, setClientsLoaded] = useState(false);
   const [barbers, setBarbers] = useState<Barber[]>([]);
+  const [services, setServices] = useState<Service[]>([]);
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [appointmentsLoaded, setAppointmentsLoaded] = useState(false);
 
   useEffect(() => {
     setTimeOffRequests(loadTimeOff());
@@ -179,15 +187,64 @@ export function CalendarProvider({ children }: { children: ReactNode }) {
     let cancelled = false;
     (async () => {
       try {
-        const [locRes, barberRes] = await Promise.all([
+        const [locRes, barberRes, serviceRes, apptRes] = await Promise.all([
           fetch("/api/locations"),
           fetch("/api/barbers"),
+          fetch("/api/services"),
+          fetch("/api/appointments"),
         ]);
         const locData = locRes.ok ? await locRes.json() : { locations: [] };
         const barberData = barberRes.ok ? await barberRes.json() : { barbers: [] };
+        const serviceData = serviceRes.ok ? await serviceRes.json() : { services: [] };
+        const apptData = apptRes.ok ? await apptRes.json() : { appointments: [] };
         if (cancelled) return;
         setLocations(locData.locations ?? []);
         setBarbers(barberData.barbers ?? []);
+        setServices(
+          (serviceData.services ?? []).map(
+            (s: {
+              id: string;
+              name: string;
+              description: string;
+              durationMin: number;
+              priceEur: number;
+            }): Service => ({
+              id: s.id,
+              name: s.name,
+              description: s.description,
+              durationMin: s.durationMin,
+              price: s.priceEur,
+            })
+          )
+        );
+        setAppointments(
+          (apptData.appointments ?? []).map(
+            (a: {
+              id: string;
+              clientName: string;
+              clientPhone: string;
+              clientEmail: string | null;
+              notes: string | null;
+              serviceId: string;
+              barberId: string;
+              startsAt: string;
+              status: Appointment["status"];
+              durationMinOverride: number | null;
+            }): Appointment => ({
+              id: a.id,
+              clientName: a.clientName,
+              clientPhone: a.clientPhone,
+              clientEmail: a.clientEmail ?? undefined,
+              notes: a.notes ?? undefined,
+              serviceId: a.serviceId,
+              barberId: a.barberId,
+              startsAt: a.startsAt,
+              status: a.status,
+              durationMin: a.durationMinOverride ?? undefined,
+            })
+          )
+        );
+        setAppointmentsLoaded(true);
       } catch {
         // leave empty on failure; UI shows the empty state
       }
@@ -311,6 +368,9 @@ export function CalendarProvider({ children }: { children: ReactNode }) {
         addBarber,
         updateBarber,
         removeBarber,
+        services,
+        appointments,
+        appointmentsLoaded,
       }}
     >
       {children}
