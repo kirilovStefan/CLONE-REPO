@@ -1071,6 +1071,54 @@ export const translations = {
     fr: "Commencez avec un salon, passez à dix — sans changer d'outil.",
   },
 
+  // Landing — how it works (3 steps)
+  "landing.how.eyebrow": {
+    bg: "Просто от първия ден",
+    en: "Simple from day one",
+  },
+  "landing.how.title": {
+    bg: "Работещ салон за 3 стъпки",
+    en: "A working salon in 3 steps",
+  },
+  "landing.how.sub": {
+    bg: "Без обучения и наръчници. Регистрираш се сутринта — приемаш онлайн часове до обяд.",
+    en: "No training, no manuals. Sign up in the morning — take online bookings by noon.",
+  },
+  "landing.how.s1.title": {
+    bg: "Създай профил",
+    en: "Create your account",
+  },
+  "landing.how.s1.desc": {
+    bg: "Име, имейл, парола — една минута. Без карта, без договори.",
+    en: "Name, email, password — one minute. No card, no contracts.",
+  },
+  "landing.how.s2.title": {
+    bg: "Добави екипа и услугите",
+    en: "Add your team and services",
+  },
+  "landing.how.s2.desc": {
+    bg: "Бръснари, работно време, ценоразпис и продължителност на услугите.",
+    en: "Barbers, working hours, price list and service durations.",
+  },
+  "landing.how.s3.title": {
+    bg: "Сподели линка",
+    en: "Share your link",
+  },
+  "landing.how.s3.desc": {
+    bg: "Публичен линк и QR код. Клиентите си запазват час сами, 24/7.",
+    en: "A public link and QR code. Clients book themselves, 24/7.",
+  },
+
+  // Landing — testimonial
+  "landing.testimonial.quote": {
+    bg: "За две седмици намалихме празните часове наполовина. Клиентите си запазват сами, а аз най-после виждам кой колко изкарва.",
+    en: "In two weeks we cut empty slots in half. Clients book themselves, and I finally see who's earning what.",
+  },
+  "landing.testimonial.by": {
+    bg: "Кристиян, собственик на Fade Lab, София",
+    en: "Kristiyan, owner of Fade Lab, Sofia",
+  },
+
   // Landing — features
   "landing.features.title": {
     bg: "Всичко в едно",

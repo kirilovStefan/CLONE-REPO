@@ -4,23 +4,31 @@
 
 :root,
 .dark {
-  --ink: 11 11 13;
-  --ink-soft: 22 22 26;
+  --ink: 10 10 11;
+  --ink-soft: 20 20 23;
+  --ink-card: 22 22 26;
   --ink-muted: 42 42 48;
   --bone: 245 239 230;
-  --bone-dim: 207 198 184;
-  --accent: 201 163 106;
-  --accent-hover: 184 140 79;
+  --bone-dim: 163 155 141;
+  --accent: 216 179 106;
+  --accent-hover: 169 130 63;
+  --gold-1: 243 220 160;
+  --gold-2: 216 179 106;
+  --gold-3: 169 130 63;
 }
 
 .light {
   --ink: 250 246 240;
   --ink-soft: 255 255 255;
+  --ink-card: 250 247 241;
   --ink-muted: 215 207 195;
   --bone: 21 19 16;
   --bone-dim: 95 88 80;
-  --accent: 161 121 64;
+  --accent: 169 130 63;
   --accent-hover: 138 100 50;
+  --gold-1: 200 156 80;
+  --gold-2: 169 130 63;
+  --gold-3: 138 100 50;
 }
 
 :root {
@@ -39,4 +47,25 @@ body {
 ::selection {
   background: rgb(var(--accent) / 1);
   color: rgb(var(--ink) / 1);
+}
+
+.text-gold-gradient {
+  background-image: linear-gradient(
+    135deg,
+    rgb(var(--gold-1)),
+    rgb(var(--gold-2)) 50%,
+    rgb(var(--gold-3))
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.bg-gold-gradient {
+  background-image: linear-gradient(
+    135deg,
+    rgb(var(--gold-1)),
+    rgb(var(--gold-2)) 50%,
+    rgb(var(--gold-3))
+  );
 }

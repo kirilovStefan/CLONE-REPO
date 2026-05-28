@@ -7,6 +7,7 @@ import { useCalendar, isSameDay, startOfDay } from "@/lib/calendar-context";
 import { useT } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth-context";
 import type { TranslationKey } from "@/lib/translations";
+import { Logo } from "@/components/Logo";
 
 type Item = {
   href: string;
@@ -54,12 +55,8 @@ function BusinessHeader() {
         onBlur={() => setTimeout(() => setOpen(false), 200)}
         className="flex w-full items-center gap-3 px-4 py-3 text-left transition hover:bg-ink-muted/20"
       >
-        <span
-          className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-accent font-display text-lg font-bold text-ink"
-          title={t("sidebar.uploadLogo")}
-        >
-          B
-        </span>
+        <Logo size="md" />
+
         <div className="min-w-0 flex-1">
           <p className="truncate font-display text-sm leading-tight">
             {businessName}

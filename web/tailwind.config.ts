@@ -35,6 +35,7 @@ const config: Config = {
         ink: {
           DEFAULT: "rgb(var(--ink) / <alpha-value>)",
           soft: "rgb(var(--ink-soft) / <alpha-value>)",
+          card: "rgb(var(--ink-card) / <alpha-value>)",
           muted: "rgb(var(--ink-muted) / <alpha-value>)",
         },
         bone: {
@@ -44,6 +45,11 @@ const config: Config = {
         accent: {
           DEFAULT: "rgb(var(--accent) / <alpha-value>)",
           hover: "rgb(var(--accent-hover) / <alpha-value>)",
+        },
+        gold: {
+          1: "rgb(var(--gold-1) / <alpha-value>)",
+          2: "rgb(var(--gold-2) / <alpha-value>)",
+          3: "rgb(var(--gold-3) / <alpha-value>)",
         },
       },
       fontFamily: {
