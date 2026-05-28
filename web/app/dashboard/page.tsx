@@ -616,20 +616,42 @@ function Toolbar({
       <div className="flex items-center gap-2">
         <button
           onClick={onPrevDay}
-          className="grid h-9 w-9 place-items-center rounded-lg border border-ink-muted text-bone-dim transition hover:border-accent hover:text-bone"
+          className="grid h-9 w-9 place-items-center rounded-lg border border-ink-muted/70 text-bone-dim transition hover:border-accent hover:text-bone"
           aria-label={t("toolbar.prevDay")}
         >
-          ←
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <polyline points="15 18 9 12 15 6" />
+          </svg>
         </button>
-        <h1 className="font-display text-xl capitalize md:text-2xl">
+        <h1 className="font-display text-xl capitalize md:text-[22px]">
           {dateLabel}
         </h1>
         <button
           onClick={onNextDay}
-          className="grid h-9 w-9 place-items-center rounded-lg border border-ink-muted text-bone-dim transition hover:border-accent hover:text-bone"
+          className="grid h-9 w-9 place-items-center rounded-lg border border-ink-muted/70 text-bone-dim transition hover:border-accent hover:text-bone"
           aria-label={t("toolbar.nextDay")}
         >
-          →
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <polyline points="9 18 15 12 9 6" />
+          </svg>
         </button>
         <button
           onClick={onJumpToToday}
@@ -1037,7 +1059,7 @@ function AppointmentBlock({
         onClick();
       }}
       onMouseMove={(e) => e.stopPropagation()}
-      className={`absolute inset-x-1.5 z-[5] cursor-grab overflow-hidden rounded-lg border-l-[5px] px-2.5 py-1.5 text-left text-[11px] leading-tight shadow-md ring-1 ring-inset transition ${colors.bg} ${colors.border} ${colors.ring} ${
+      className={`absolute inset-x-1.5 z-[5] cursor-grab overflow-hidden rounded-xl border-l-[5px] px-2.5 py-1.5 text-left text-[11px] leading-tight shadow-md ring-1 ring-inset transition ${colors.bg} ${colors.gradient} ${colors.border} ${colors.ring} ${
         status === "no-show" ? "opacity-75" : ""
       } ${
         isDragging

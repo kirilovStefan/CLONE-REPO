@@ -300,10 +300,18 @@ export const upcomingAppointments = todaysAppointments
 
 export const STATUS_COLOR_CLASSES: Record<
   AppointmentStatus,
-  { bg: string; border: string; label: string; dot: string; ring: string }
+  {
+    bg: string;
+    gradient: string;
+    border: string;
+    label: string;
+    dot: string;
+    ring: string;
+  }
 > = {
   confirmed: {
     bg: "bg-emerald-500/40",
+    gradient: "bg-gradient-to-br from-emerald-300/90 to-emerald-600/70",
     border: "border-l-emerald-300",
     label: "Записан",
     dot: "bg-emerald-300",
@@ -311,6 +319,7 @@ export const STATUS_COLOR_CLASSES: Record<
   },
   "in-progress": {
     bg: "bg-amber-500/50",
+    gradient: "bg-gradient-to-br from-amber-300/90 to-amber-600/70",
     border: "border-l-amber-300",
     label: "В момента",
     dot: "bg-amber-300",
@@ -318,6 +327,7 @@ export const STATUS_COLOR_CLASSES: Record<
   },
   completed: {
     bg: "bg-violet-500/40",
+    gradient: "bg-gradient-to-br from-violet-300/90 to-violet-600/70",
     border: "border-l-violet-300",
     label: "Платено",
     dot: "bg-violet-300",
@@ -325,6 +335,7 @@ export const STATUS_COLOR_CLASSES: Record<
   },
   "no-show": {
     bg: "bg-rose-500/40",
+    gradient: "bg-gradient-to-br from-rose-300/85 to-rose-600/60",
     border: "border-l-rose-300",
     label: "Не дойде",
     dot: "bg-rose-300",
@@ -332,6 +343,7 @@ export const STATUS_COLOR_CLASSES: Record<
   },
   cancelled: {
     bg: "bg-zinc-500/30",
+    gradient: "bg-gradient-to-br from-zinc-400/70 to-zinc-600/50",
     border: "border-l-zinc-400",
     label: "Отказан",
     dot: "bg-zinc-400",

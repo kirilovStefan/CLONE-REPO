@@ -82,13 +82,25 @@ function NotificationBell() {
         type="button"
         onClick={() => setOpen((v) => !v)}
         onBlur={() => setTimeout(() => setOpen(false), 200)}
-        className="relative grid h-9 w-9 place-items-center rounded-lg border border-ink-muted/60 text-base transition hover:border-accent"
+        className="relative grid h-9 w-9 place-items-center rounded-lg border border-ink-muted/70 text-bone transition hover:border-accent"
         aria-label={t("bell.title")}
         title={t("bell.title")}
       >
-        🔔
+        <svg
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+          <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+        </svg>
         {badgeCount > 0 && (
-          <span className="absolute -right-1 -top-1 grid h-4 min-w-4 place-items-center rounded-full bg-rose-500 px-1 text-[10px] font-bold text-white">
+          <span className="absolute -right-1.5 -top-1.5 grid h-[18px] min-w-[18px] place-items-center rounded-full bg-rose-500 px-1 text-[10px] font-bold text-white">
             {badgeCount}
           </span>
         )}
